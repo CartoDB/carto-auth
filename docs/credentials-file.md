@@ -1,6 +1,6 @@
 # CARTO credentials file
 
-To generate CARTO Auth tokens in pydeck-carto you need to create a `carto_credentials.json` file with the following content:
+To generate CARTO Auth tokens in carto-auth you need to create a `carto_credentials.json` file with the following content:
 
 ```json
 {

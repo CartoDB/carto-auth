@@ -1,0 +1,9 @@
+repos:
+- repo: local
+  hooks:
+    - id: lint
+      name: Run linter
+      entry: make lint
+      language: system
+      types: [python]
+      require_serial: true
