@@ -1,7 +1,6 @@
 # carto-auth
 
 [![PyPI version](https://badge.fury.io/py/carto-auth.svg)](https://badge.fury.io/py/carto-auth)
-[![PyPI downloads](https://img.shields.io/pypi/dm/carto-auth.svg)](https://pypistats.org/packages/carto-auth)
 [![Tests](https://github.com/cartodb/carto-auth/actions/workflows/ci.yml/badge.svg)](https://github.com/cartodb/carto-auth/actions)
 
 Python library to authenticate with [CARTO](carto.com).
@@ -10,6 +9,12 @@ Python library to authenticate with [CARTO](carto.com).
 
 ```bash
 pip install carto-auth
+```
+
+To install the BigQuery extension:
+
+```bash
+pip install carto-auth[bigquery]
 ```
 
 ### Installing from source
@@ -25,11 +30,16 @@ pip install .
 ```py
 from carto_auth import CartoAuth
 
-ca = CartoAuth.from_oauth()
+# Authentication
+carto_auth = CartoAuth.from_oauth()
+# carto_auth = CartoAuth.from_file("./carto_credentials.json")
 
-ca.token
+# Get access token
+access_token = carto_auth.get_access_token()
 
-cdw = ca.get_carto_dw_client()
+# CARTO Data Warehouse
+carto_dw_project, carto_dw_token = carto_auth.get_carto_dw_credentials()
+carto_dw_client = carto_auth.get_carto_dw_client()
 ```
 
 For more information, check the [examples](./examples) section.
@@ -45,6 +55,8 @@ Make commands:
 - publish-pypi: publish package in pypi.org
 - publish-test-pypi: publish package in test.pypi.org
 - clean: remove the environment
+
+Check the development [documentation](./docs) section.
 
 ## Contributors
 
