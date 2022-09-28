@@ -126,9 +126,9 @@ get_access_token()
 get_carto_dw_client()
 ```
 
-Returns a BigQuery client to query directly the CARTO Data Warehouse.
+Returns a client to query directly the CARTO Data Warehouse.
 
-It requires extra dependencies carto-auth[google] to be installed.
+It requires extra dependencies carto-auth[carto-dw] to be installed.
 
 ---
 
@@ -153,6 +153,7 @@ Get the CARTO Data Warehouse credentials.
 **Raises:**
 
  - <b>`CredentialsError`</b>:  If the API Base URL is not provided.
+
 
 
 
