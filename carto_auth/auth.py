@@ -159,9 +159,9 @@ class CartoAuth:
         return creds["projectId"], creds["token"]
 
     def get_carto_dw_client(self):
-        """Returns a BigQuery client to query directly the CARTO Data Warehouse.
+        """Returns a client to query directly the CARTO Data Warehouse.
 
-        It requires extra dependencies carto-auth[google] to be installed.
+        It requires extra dependencies carto-auth[carto-dw] to be installed.
         """
         from google.cloud.bigquery import Client
         from google.oauth2.credentials import Credentials

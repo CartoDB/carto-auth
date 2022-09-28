@@ -11,10 +11,10 @@ Python library to authenticate with [CARTO](carto.com).
 pip install carto-auth
 ```
 
-To install the BigQuery extension:
+To install the CARTO DW extension:
 
 ```bash
-pip install carto-auth[bigquery]
+pip install carto-auth[carto-dw]
 ```
 
 ### Installing from source

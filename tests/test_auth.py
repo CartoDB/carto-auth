@@ -124,7 +124,7 @@ def test_carto_dw_credentials(requests_mock):
     assert carto_dw_token == "token-mock"
 
 
-def test_big_query_client(requests_mock):
+def test_carto_dw_client(requests_mock):
     from google.cloud.bigquery import Client
 
     requests_mock.get(
