@@ -1,4 +1,5 @@
 import os
+import sys
 import json
 import datetime
 import requests
@@ -163,11 +164,15 @@ class CartoAuth:
 
         It requires extra dependencies carto-auth[carto-dw] to be installed.
         """
-        from google.cloud.bigquery import Client
-        from google.oauth2.credentials import Credentials
+        try:
+            from google.cloud.bigquery import Client
+            from google.oauth2.credentials import Credentials
 
-        cdw_project, cdw_token = self.get_carto_dw_credentials()
-        return Client(cdw_project, credentials=Credentials(cdw_token))
+            cdw_project, cdw_token = self.get_carto_dw_credentials()
+            return Client(cdw_project, credentials=Credentials(cdw_token))
+        except Exception:
+            sys.stderr.write("Error: CARTO DW extension not found.\n")
+            sys.stderr.write("Please, install carto-auth[carto-dw]\n")
 
     def get_access_token(self):
         if self._access_token and not self._token_expired():

@@ -15,7 +15,7 @@
 
 ---
 
-<a href="../carto_auth/auth.py#L13"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../carto_auth/auth.py#L14"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>class</kbd> `CartoAuth`
 CARTO Authentication object used to gather connect with the CARTO services.
@@ -29,7 +29,7 @@ CARTO Authentication object used to gather connect with the CARTO services.
 How to get the API credentials:
  - <b>`https`</b>: //docs.carto.com/carto-user-manual/developers/carto-for-developers/
 
-<a href="../carto_auth/auth.py#L38"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../carto_auth/auth.py#L39"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>method</kbd> `__init__`
 
@@ -54,7 +54,7 @@ __init__(
 
 ---
 
-<a href="../carto_auth/auth.py#L109"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../carto_auth/auth.py#L110"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>classmethod</kbd> `from_file`
 
@@ -77,7 +77,7 @@ Create a CartoAuth object using CARTO credentials file.
 
 ---
 
-<a href="../carto_auth/auth.py#L69"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../carto_auth/auth.py#L70"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>classmethod</kbd> `from_oauth`
 
@@ -104,7 +104,7 @@ Create a CartoAuth object using OAuth with CARTO.
 
 ---
 
-<a href="../carto_auth/auth.py#L172"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../carto_auth/auth.py#L177"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>method</kbd> `get_access_token`
 
@@ -118,7 +118,7 @@ get_access_token()
 
 ---
 
-<a href="../carto_auth/auth.py#L161"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../carto_auth/auth.py#L162"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>method</kbd> `get_carto_dw_client`
 
@@ -132,7 +132,7 @@ It requires extra dependencies carto-auth[carto-dw] to be installed.
 
 ---
 
-<a href="../carto_auth/auth.py#L141"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../carto_auth/auth.py#L142"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>method</kbd> `get_carto_dw_credentials`
 
@@ -153,7 +153,3 @@ Get the CARTO Data Warehouse credentials.
 **Raises:**
 
  - <b>`CredentialsError`</b>:  If the API Base URL is not provided.
-
-
-
-

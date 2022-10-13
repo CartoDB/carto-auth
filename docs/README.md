@@ -18,5 +18,3 @@
 ## Functions
 
 - No functions
-
-

@@ -7,3 +7,9 @@ repos:
       language: system
       types: [python]
       require_serial: true
+    - id: test
+      name: Run tests
+      entry: make test
+      language: system
+      types: [python]
+      require_serial: true
