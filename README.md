@@ -1,6 +1,7 @@
 # carto-auth
 
 [![PyPI version](https://badge.fury.io/py/carto-auth.svg)](https://badge.fury.io/py/carto-auth)
+[![PyPI downloads](https://img.shields.io/pypi/dm/carto-auth.svg)](https://pypistats.org/packages/carto-auth)
 [![Tests](https://github.com/cartodb/carto-auth/actions/workflows/ci.yml/badge.svg)](https://github.com/cartodb/carto-auth/actions)
 
 Python library to authenticate with [CARTO](carto.com).

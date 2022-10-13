@@ -21,7 +21,7 @@ setup(
     install_requires=[
         "requests",
     ],
-    extras_require={"carto-dw": ["google-auth", "google-cloud-bigquery"]},
+    extras_require={"carto-dw": ["google-auth", "google-cloud-bigquery>=2.34.4"]},
     classifiers=[
         "Development Status :: 4 - Beta",
         "Intended Audience :: Developers",

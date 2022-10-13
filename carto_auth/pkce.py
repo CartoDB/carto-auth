@@ -1,3 +1,4 @@
+import os
 import sys
 import random
 import logging
@@ -35,7 +36,10 @@ class CartoPKCE:
                 to authorize a user. Default True, except when using google.collab.
         """
         using_google_colab = "google.colab" in sys.modules
-        self.open_browser = False if using_google_colab else open_browser
+        using_databricks = "DATABRICKS_RUNTIME_VERSION" in os.environ
+        self.open_browser = (
+            False if (using_google_colab or using_databricks) else open_browser
+        )
 
         self.redirect_uri = (
             self.REDIRECT_URI if self.open_browser else self.REDIRECT_URI_CLI
@@ -64,16 +68,9 @@ class CartoPKCE:
 
     def _open_auth_url(self, state=None):
         auth_url = self.get_authorize_url(state)
-        try:
-            opened = webbrowser.open_new(auth_url)
-            if opened:
-                logger.info("Opened %s in your browser", auth_url)
-            else:
-                raise webbrowser.Error()
-        except webbrowser.Error:
-            self.redirect_uri = self.REDIRECT_URI_CLI
-            auth_url = self.get_authorize_url(state)
-            logger.error("Please navigate here: %s", auth_url)
+        opened = webbrowser.open_new(auth_url)
+        if opened:
+            logger.info("Opened %s in your browser", auth_url)
 
     def get_authorize_url(self, state=None):
         if not self._code_challenge:
@@ -107,13 +104,18 @@ class CartoPKCE:
         if open_browser is None:
             open_browser = self.open_browser
 
-        if (
-            open_browser
-            and redirect_host in ("127.0.0.1", "localhost")
-            and redirect_info.scheme == "http"
-        ):
-            return self._get_auth_response_local_server(redirect_port)
-        return self._get_auth_response_interactive(open_browser=open_browser)
+        try:
+            if (
+                open_browser
+                and redirect_host in ("127.0.0.1", "localhost")
+                and redirect_info.scheme == "http"
+            ):
+                return self._get_auth_response_local_server(redirect_port)
+        except Exception:
+            self.redirect_uri = self.REDIRECT_URI_CLI
+            return self._get_auth_response_interactive()
+
+        return self._get_auth_response_interactive()
 
     def _get_auth_response_local_server(self, redirect_port):
         server = _start_local_http_server(redirect_port)
@@ -132,15 +134,12 @@ class CartoPKCE:
             )
 
     def _input(self, prompt):
-        return input(prompt)
+        print(prompt)
+        return input()
 
-    def _get_auth_response_interactive(self, open_browser=False):
-        if open_browser or self.open_browser:
-            self._open_auth_url()
-            prompt = "Enter the URL you were redirected to: "
-        else:
-            url = self.get_authorize_url()
-            prompt = "Go to the following URL:\n{}\nEnter the Access Code: ".format(url)
+    def _get_auth_response_interactive(self):
+        url = self.get_authorize_url()
+        prompt = "Go to the following URL:\n{}\nEnter the Access code: ".format(url)
         response = self._input(prompt)
         if "code=" in response:
             state, code = self._parse_auth_response_url(response)
