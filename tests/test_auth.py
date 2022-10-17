@@ -23,6 +23,7 @@ def test_carto_auth_from_parameters(requests_mock):
     assert carto_auth.client_id == "1234"
     assert carto_auth.client_secret == "1234567890"
     assert carto_auth.api_base_url == "https://gcp-us-east1.api.carto.com"
+    assert str(carto_auth.cache_filepath).endswith(".carto-auth/token.json")
 
     access_token = carto_auth.get_access_token()
     assert access_token == "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpX"
@@ -47,6 +48,7 @@ def test_carto_auth_from_file(requests_mock):
     assert carto_auth.client_secret == "1234567890"
     assert carto_auth.api_base_url == "https://api.carto.com"
     assert carto_auth._token_expired() is True
+    assert str(carto_auth.cache_filepath).endswith(".carto-auth/token.json")
 
     access_token = carto_auth.get_access_token()
     assert access_token == "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpX"
@@ -72,6 +74,7 @@ def test_carto_auth_from_oauth(mocker, requests_mock):
     )
 
     carto_auth = CartoAuth.from_oauth(open_browser=False, use_cache=False)
+    assert str(carto_auth.cache_filepath).endswith(".carto-auth/token.json")
 
     access_token = carto_auth.get_access_token()
     assert access_token == "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpX"
@@ -81,6 +84,7 @@ def test_handle_file_token_cached_on_file():
     cache_filepath = "fixtures/.carto_token_ok.json"
     fullpath = os.path.join(os.path.dirname(__file__), cache_filepath)
     carto_auth = CartoAuth(cache_filepath=fullpath)
+    assert str(carto_auth.cache_filepath).endswith(cache_filepath)
 
     saved_token = "testAccessTokenlkjsdofiuqwelrkjas908d7"  # encoded on the file
     assert saved_token == carto_auth.get_access_token()

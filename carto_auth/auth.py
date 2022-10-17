@@ -6,29 +6,27 @@ import requests
 
 from carto_auth.pkce import CartoPKCE
 from carto_auth.errors import CredentialsError
+from carto_auth.utils import get_cache_filepath
 
 DEFAULT_API_BASE_URL = "https://gcp-us-east1.api.carto.com"
-DEFAULT_CACHE_FILEPATH = ".carto_token.json"
 
 
 class CartoAuth:
     """CARTO Authentication object used to gather connect with the CARTO services.
 
     Args:
-        api_base_url (str, optional):
-            Base URL for a CARTO account. Default "https://gcp-us-east1.api.carto.com".
-        client_id (str, optional):
-            Client id of a M2M application provided by CARTO.
-        client_secret (str, optional):
-            Client secret of a M2M application provided by CARTO.
-        cache_filepath (str, optional):
-            File path where the token is stored. Default ".carto_token.json".
-        use_cache (bool, optional):
-            Whether the stored cached token should be used. Default True.
-        access_token (str, optional):
-            Token already generated with CARTO.
-        expires_in (str, optional):
-            Time in seconds when the token will be expired.
+        api_base_url (str, optional): Base URL for a CARTO account.
+            Default "https://gcp-us-east1.api.carto.com".
+        client_id (str, optional): Client id of a M2M application
+            provided by CARTO.
+        client_secret (str, optional): Client secret of a M2M application
+            provided by CARTO.
+        cache_filepath (str, optional): File path where the token is stored.
+            Default "home()/.carto-auth/token.json".
+        use_cache (bool, optional): Whether the stored cached token should be used.
+            Default True.
+        access_token (str, optional): Token already generated with CARTO.
+        expires_in (str, optional): Time in seconds when the token will be expired.
 
     How to get the API credentials:
         https://docs.carto.com/carto-user-manual/developers/carto-for-developers/
@@ -41,7 +39,7 @@ class CartoAuth:
         api_base_url=DEFAULT_API_BASE_URL,
         client_id=None,
         client_secret=None,
-        cache_filepath=DEFAULT_CACHE_FILEPATH,
+        cache_filepath=None,
         use_cache=True,
         access_token=None,
         expires_in=None,
@@ -49,13 +47,15 @@ class CartoAuth:
         self.api_base_url = api_base_url
         self.client_id = client_id
         self.client_secret = client_secret
-        self.cache_filepath = cache_filepath
+        self.cache_filepath = (
+            get_cache_filepath() if cache_filepath is None else cache_filepath
+        )
         self.use_cache = use_cache
 
         if access_token and expires_in:
             now = datetime.datetime.utcnow()
-            expires_in = now + datetime.timedelta(seconds=expires_in)
-            self._expiration_ts = expires_in.timestamp()
+            expiration_ts = now + datetime.timedelta(seconds=expires_in)
+            self._expiration_ts = expiration_ts.timestamp()
             self._access_token = access_token
             self._save_cached_token()
         else:
@@ -71,7 +71,7 @@ class CartoAuth:
     def from_oauth(
         cls,
         api_base_url=DEFAULT_API_BASE_URL,
-        cache_filepath=DEFAULT_CACHE_FILEPATH,
+        cache_filepath=None,
         use_cache=True,
         open_browser=True,
     ):
@@ -81,12 +81,15 @@ class CartoAuth:
             api_base_url (str, optional): Base URL for a CARTO account.
                 Default "https://gcp-us-east1.api.carto.com".
             cache_filepath (str, optional): File path where the token is stored.
-                Default ".carto_token.json".
+                Default "home()/.carto-auth/token.json".
             use_cache (bool, optional): Whether the stored cached token should be used.
                 Default True.
             open_browser (bool, optional): Whether the web browser should be opened
                 to authorize a user. Default True.
         """
+        if cache_filepath is None:
+            cache_filepath = get_cache_filepath()
+
         if api_base_url and cache_filepath and use_cache:
             try:
                 return cls(
@@ -228,10 +231,10 @@ class CartoAuth:
             response_data = response.json()
             self._access_token = response_data["access_token"]
             self.token_type = response_data["token_type"]
-            expires_in_seconds = response_data["expires_in"]
+            expires_in = response_data["expires_in"]
             now = datetime.datetime.utcnow()
-            expires_in = now + datetime.timedelta(seconds=expires_in_seconds)
-            self._expiration_ts = expires_in.timestamp()
+            expiration_ts = now + datetime.timedelta(seconds=expires_in)
+            self._expiration_ts = expiration_ts.timestamp()
             self._save_cached_token()
 
         return self._access_token
@@ -248,6 +251,7 @@ class CartoAuth:
             return True
 
         now_utc_ts = datetime.datetime.utcnow().timestamp()
+
         return now_utc_ts > self._expiration_ts
 
     def _save_cached_token(self):
@@ -260,6 +264,7 @@ class CartoAuth:
                 "expiresTS": self._expiration_ts,
             }
             json.dump(info_to_cache, fw)
+
         return True
 
     def _load_cached_token(self):
@@ -274,6 +279,7 @@ class CartoAuth:
             info = json.load(fr)
             self._access_token = info["accessToken"]
             self._expiration_ts = info["expiresTS"]
+
         if self._token_expired():
             return False
 

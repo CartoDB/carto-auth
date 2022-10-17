@@ -7,6 +7,7 @@
 - [`auth`](./auth.md#module-auth)
 - [`errors`](./errors.md#module-errors)
 - [`pkce`](./pkce.md#module-pkce)
+- [`utils`](./utils.md#module-utils)
 
 ## Classes
 
@@ -17,4 +18,5 @@
 
 ## Functions
 
-- No functions
+- [`utils.get_cache_filepath`](./utils.md#function-get_cache_filepath)
+- [`utils.get_home_dir`](./utils.md#function-get_home_dir)

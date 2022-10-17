@@ -166,5 +166,4 @@ cython_debug/
 .vscode
 
 # Custom
-.carto_token.json
 carto_credentials.json
