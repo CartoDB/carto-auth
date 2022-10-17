@@ -20,3 +20,5 @@
 
 - [`utils.get_cache_filepath`](./utils.md#function-get_cache_filepath)
 - [`utils.get_home_dir`](./utils.md#function-get_home_dir)
+
+

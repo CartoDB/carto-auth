@@ -16,7 +16,6 @@ class CartoAuth:
 
     Args:
         api_base_url (str, optional): Base URL for a CARTO account.
-            Default "https://gcp-us-east1.api.carto.com".
         client_id (str, optional): Client id of a M2M application
             provided by CARTO.
         client_secret (str, optional): Client secret of a M2M application
@@ -27,9 +26,6 @@ class CartoAuth:
             Default True.
         access_token (str, optional): Token already generated with CARTO.
         expires_in (str, optional): Time in seconds when the token will be expired.
-
-    How to get the API credentials:
-        https://docs.carto.com/carto-user-manual/developers/carto-for-developers/
     """
 
     OAUTH_TOKEN_URL = "https://auth.carto.com/oauth/token"
@@ -79,7 +75,6 @@ class CartoAuth:
 
         Args:
             api_base_url (str, optional): Base URL for a CARTO account.
-                Default "https://gcp-us-east1.api.carto.com".
             cache_filepath (str, optional): File path where the token is stored.
                 Default "home()/.carto-auth/token.json".
             use_cache (bool, optional): Whether the stored cached token should be used.
@@ -115,17 +110,15 @@ class CartoAuth:
         """Create a CartoAuth object using CARTO credentials file.
 
         Args:
-            filepath (str):
-                File path of the CARTO credentials file.
-            use_cache (bool, optional):
-                Whether the stored cached token should be used. Default True.
+            filepath (str): File path of the CARTO credentials file.
+            use_cache (bool, optional): Whether the stored cached token should be used.
+                Default True.
 
         Raises:
-            AttributeError
-                If the CARTO credentials file does not contain the following
-                attributes: "client_id", "api_base_url", "client_secret".
-            ValueError
-                If the CARTO credentials file does not contain any attribute value.
+            AttributeError: If the CARTO credentials file does not contain the
+                following attributes: "client_id", "api_base_url", "client_secret".
+            ValueError: If the CARTO credentials file does not contain any
+                attribute value.
         """
         with open(filepath, "r") as f:
             content = json.load(f)

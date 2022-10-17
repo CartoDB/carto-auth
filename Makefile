@@ -21,6 +21,8 @@ test:
 
 docs:
 	$(BIN)/lazydocs carto_auth --validate --output-path="docs" --overview-file="README.md"
+	cd docs; bash post.sh;
+
 
 publish-pypi:
 	rm -rf $(DIST) $(BUILD) *.egg-info

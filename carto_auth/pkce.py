@@ -33,7 +33,8 @@ class CartoPKCE:
 
         Args:
             open_browser (bool, optional): Whether the web browser should be opened
-                to authorize a user. Default True, except when using google.collab.
+                to authorize a user. Default True, except when using Google Colab
+                or Databricks.
         """
         using_google_colab = "google.colab" in sys.modules
         using_databricks = "DATABRICKS_RUNTIME_VERSION" in os.environ
