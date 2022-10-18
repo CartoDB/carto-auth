@@ -21,9 +21,9 @@ class CartoPKCE:
     OAUTH_AUTHORIZE_URL = "https://auth.carto.com/authorize"
     OAUTH_TOKEN_URL = "https://auth.carto.com/oauth/token"
     AUDIENCE = "carto-cloud-native-api"
-    CLIENT_ID = "AtxvHDeuXlR8XPfF2nj2Uv2I29pvmCxu"
+    CLIENT_ID = "0dxb8HR3ATXCxJiPOJVHsLoHoAtbRX6u"
     REDIRECT_URI = "http://localhost:10000/callback/"
-    REDIRECT_URI_CLI = "https://callbacks.carto.com/token"
+    REDIRECT_URI_CLI = "https://app.carto.com/auth/token"
 
     def __init__(
         self,
@@ -33,7 +33,8 @@ class CartoPKCE:
 
         Args:
             open_browser (bool, optional): Whether the web browser should be opened
-                to authorize a user. Default True, except when using google.collab.
+                to authorize a user. Default True, except when using Google Colab
+                or Databricks.
         """
         using_google_colab = "google.colab" in sys.modules
         using_databricks = "DATABRICKS_RUNTIME_VERSION" in os.environ
@@ -224,11 +225,11 @@ class RequestHandler(BaseHTTPRequestHandler):
 
         if self.server.auth_code:
             callback_html = """<script>
-            window.location.href = "https://callbacks.carto.com/success";
+            window.location.href = "https://app.carto.com/auth/success";
             </script>"""
         else:
             callback_html = """<script>
-            window.location.href = "https://callbacks.carto.com/error";
+            window.location.href = "https://app.carto.com/auth/error";
             </script>"""
 
         self._write(callback_html)

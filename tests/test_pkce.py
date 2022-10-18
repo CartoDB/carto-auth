@@ -10,9 +10,9 @@ def test_url_properly_created():
     parsed_qs = parse_qs(parsed_url.query)
 
     assert parsed_qs["code_challenge_method"] == ["S256"]
-    assert parsed_qs["redirect_uri"] == ["https://callbacks.carto.com/token"]
+    assert parsed_qs["redirect_uri"] == ["https://app.carto.com/auth/token"]
     assert parsed_qs["response_type"] == ["code"]
-    assert parsed_qs["client_id"][0].startswith("AtxvHDe")
+    assert parsed_qs["client_id"][0] == "0dxb8HR3ATXCxJiPOJVHsLoHoAtbRX6u"
     assert len(parsed_qs["code_challenge"]) > 0
 
 
