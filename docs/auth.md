@@ -77,8 +77,7 @@ Create a CartoAuth object using CARTO credentials file.
 
 **Raises:**
  
- - <b>`AttributeError`</b>:  If the CARTO credentials file does not contain the 
- - <b>`following attributes`</b>:  "client_id", "api_base_url", "client_secret". 
+ - <b>`AttributeError`</b>:  If the CARTO credentials file does not contain the  attributes "client_id", "api_base_url", "client_secret". 
  - <b>`ValueError`</b>:  If the CARTO credentials file does not contain any  attribute value. 
 
 ---

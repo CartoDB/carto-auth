@@ -116,7 +116,7 @@ class CartoAuth:
 
         Raises:
             AttributeError: If the CARTO credentials file does not contain the
-                following attributes: "client_id", "api_base_url", "client_secret".
+                attributes "client_id", "api_base_url", "client_secret".
             ValueError: If the CARTO credentials file does not contain any
                 attribute value.
         """
