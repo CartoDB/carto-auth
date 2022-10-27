@@ -142,7 +142,8 @@ class CartoAuth:
             tuple: carto_dw_project, carto_dw_token.
 
         Raises:
-            CredentialsError: If the API Base URL is not provided.
+            CredentialsError: If the API Base URL is not provided,
+                the response is not JSON or has invalid attributes.
         """
         if not self.api_base_url:
             raise CredentialsError("api_base_url required")
@@ -151,9 +152,22 @@ class CartoAuth:
         headers = self._api_headers()
 
         response = requests.get(url, headers=headers)
-        creds = response.json()
 
-        return creds["projectId"], creds["token"]
+        try:
+            creds = response.json()
+        except requests.exceptions.JSONDecodeError:
+            raise CredentialsError(
+                "Invalid CARTO DW Token response. "
+                "Please, make sure api_base_url is correctly defined"
+            )
+
+        if "projectId" in creds and "token" in creds:
+            return creds["projectId"], creds["token"]
+
+        raise CredentialsError(
+            "Invalid attributes in CARTO DW Token response. "
+            "Please, make sure api_base_url is correctly defined"
+        )
 
     def get_carto_dw_client(self):
         """Returns a client to query directly the CARTO Data Warehouse.
@@ -163,12 +177,12 @@ class CartoAuth:
         try:
             from google.cloud.bigquery import Client
             from google.oauth2.credentials import Credentials
-
-            cdw_project, cdw_token = self.get_carto_dw_credentials()
-            return Client(cdw_project, credentials=Credentials(cdw_token))
         except Exception:
             sys.stderr.write("Error: CARTO DW extension not found.\n")
             sys.stderr.write("Please, install carto-auth[carto-dw]\n")
+
+        cdw_project, cdw_token = self.get_carto_dw_credentials()
+        return Client(cdw_project, credentials=Credentials(cdw_token))
 
     def get_access_token(self):
         if self._access_token and not self._token_expired():
