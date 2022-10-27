@@ -63,6 +63,19 @@ def test_carto_auth_from_oauth(mocker, requests_mock):
         "carto_auth.pkce.CartoPKCE._input",
         return_value="carto.com/autorize?code=abcde",
     )
+    requests_mock.get(
+        "https://accounts.app.carto.com/accounts",
+        json={
+            "tenant_domain": "clausa.app.carto.com",
+        },
+    )
+    requests_mock.get(
+        "https://clausa.app.carto.com/config.yaml",
+        text="""
+        apis:
+            baseUrl: "https://gcp-us-east1.api.carto.com"
+        """,
+    )
     requests_mock.post(
         "https://auth.carto.com/oauth/token",
         json={

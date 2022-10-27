@@ -14,16 +14,16 @@ from carto_auth.errors import CredentialsError
 
 logger = logging.getLogger(__name__)
 
+OAUTH_AUTHORIZE_URL = "https://auth.carto.com/authorize"
+OAUTH_TOKEN_URL = "https://auth.carto.com/oauth/token"
+AUDIENCE = "carto-cloud-native-api"
+CLIENT_ID = "0dxb8HR3ATXCxJiPOJVHsLoHoAtbRX6u"
+REDIRECT_URI = "http://localhost:10000/callback/"
+REDIRECT_URI_CLI = "https://app.carto.com/auth/token"
+
 
 class CartoPKCE:
     """Implements PKCE Authorization Flow for client apps."""
-
-    OAUTH_AUTHORIZE_URL = "https://auth.carto.com/authorize"
-    OAUTH_TOKEN_URL = "https://auth.carto.com/oauth/token"
-    AUDIENCE = "carto-cloud-native-api"
-    CLIENT_ID = "0dxb8HR3ATXCxJiPOJVHsLoHoAtbRX6u"
-    REDIRECT_URI = "http://localhost:10000/callback/"
-    REDIRECT_URI_CLI = "https://app.carto.com/auth/token"
 
     def __init__(
         self,
@@ -42,9 +42,7 @@ class CartoPKCE:
             False if (using_google_colab or using_databricks) else open_browser
         )
 
-        self.redirect_uri = (
-            self.REDIRECT_URI if self.open_browser else self.REDIRECT_URI_CLI
-        )
+        self.redirect_uri = REDIRECT_URI if self.open_browser else REDIRECT_URI_CLI
 
         self._session = requests.Session()
         self._code_challenge_method = "S256"
@@ -77,10 +75,10 @@ class CartoPKCE:
         if not self._code_challenge:
             self.get_pkce_handshake_parameters()
         payload = {
-            "client_id": self.CLIENT_ID,
+            "client_id": CLIENT_ID,
             "response_type": "code",
             "scope": None,
-            "audience": self.AUDIENCE,
+            "audience": AUDIENCE,
             "redirect_uri": self.redirect_uri,
             "code_challenge_method": self._code_challenge_method,
             "code_challenge": self._code_challenge,
@@ -88,7 +86,7 @@ class CartoPKCE:
         if state is not None:
             payload["state"] = state
         urlparams = urlencode(payload)
-        return "%s?%s" % (self.OAUTH_AUTHORIZE_URL, urlparams)
+        return "%s?%s" % (OAUTH_AUTHORIZE_URL, urlparams)
 
     def get_auth_response(self, open_browser=None):
         logger.info(
@@ -113,7 +111,7 @@ class CartoPKCE:
             ):
                 return self._get_auth_response_local_server(redirect_port)
         except Exception:
-            self.redirect_uri = self.REDIRECT_URI_CLI
+            self.redirect_uri = REDIRECT_URI_CLI
             return self._get_auth_response_interactive()
 
         return self._get_auth_response_interactive()
@@ -163,9 +161,9 @@ class CartoPKCE:
             self.get_pkce_handshake_parameters()
 
         payload = {
-            "client_id": self.CLIENT_ID,
+            "client_id": CLIENT_ID,
             "grant_type": "authorization_code",
-            "audience": self.AUDIENCE,
+            "audience": AUDIENCE,
             "code": code or self.get_authorization_code(),
             "redirect_uri": self.redirect_uri,
             "code_verifier": self._code_verifier,
@@ -175,14 +173,14 @@ class CartoPKCE:
 
         logger.debug(
             "sending POST request to %s with Headers: %s and Body: %r",
-            self.OAUTH_TOKEN_URL,
+            OAUTH_TOKEN_URL,
             headers,
             payload,
         )
 
         try:
             response = self._session.post(
-                self.OAUTH_TOKEN_URL,
+                OAUTH_TOKEN_URL,
                 data=payload,
                 headers=headers,
                 verify=True,

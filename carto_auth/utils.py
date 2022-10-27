@@ -9,3 +9,10 @@ def get_home_dir():
 
 def get_cache_filepath():
     return get_home_dir() / "token.json"
+
+
+def api_headers(access_token):
+    return {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {access_token}",
+    }

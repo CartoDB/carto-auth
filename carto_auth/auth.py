@@ -1,14 +1,16 @@
 import os
 import sys
 import json
+import yaml
 import datetime
 import requests
 
 from carto_auth.pkce import CartoPKCE
 from carto_auth.errors import CredentialsError
-from carto_auth.utils import get_cache_filepath
+from carto_auth.utils import get_cache_filepath, api_headers
 
 DEFAULT_API_BASE_URL = "https://gcp-us-east1.api.carto.com"
+OAUTH_TOKEN_URL = "https://auth.carto.com/oauth/token"
 
 
 class CartoAuth:
@@ -27,8 +29,6 @@ class CartoAuth:
         access_token (str, optional): Token already generated with CARTO.
         expires_in (str, optional): Time in seconds when the token will be expired.
     """
-
-    OAUTH_TOKEN_URL = "https://auth.carto.com/oauth/token"
 
     def __init__(
         self,
@@ -66,7 +66,6 @@ class CartoAuth:
     @classmethod
     def from_oauth(
         cls,
-        api_base_url=DEFAULT_API_BASE_URL,
         cache_filepath=None,
         use_cache=True,
         open_browser=True,
@@ -74,7 +73,6 @@ class CartoAuth:
         """Create a CartoAuth object using OAuth with CARTO.
 
         Args:
-            api_base_url (str, optional): Base URL for a CARTO account.
             cache_filepath (str, optional): File path where the token is stored.
                 Default "home()/.carto-auth/token.json".
             use_cache (bool, optional): Whether the stored cached token should be used.
@@ -85,18 +83,16 @@ class CartoAuth:
         if cache_filepath is None:
             cache_filepath = get_cache_filepath()
 
-        if api_base_url and cache_filepath and use_cache:
+        if cache_filepath and use_cache:
             try:
-                return cls(
-                    api_base_url=api_base_url,
-                    cache_filepath=cache_filepath,
-                )
+                return cls(cache_filepath=cache_filepath)
             except CredentialsError:
                 pass
 
         carto_pkce = CartoPKCE(open_browser=open_browser)
         code = carto_pkce.get_auth_response()
         token_info = carto_pkce.get_token_info(code)
+        api_base_url = get_api_base_url(token_info["access_token"])
 
         return cls(
             api_base_url=api_base_url,
@@ -116,13 +112,13 @@ class CartoAuth:
 
         Raises:
             AttributeError: If the CARTO credentials file does not contain the
-                attributes "client_id", "api_base_url", "client_secret".
+                attributes "api_base_url", "client_id", "client_secret".
             ValueError: If the CARTO credentials file does not contain any
                 attribute value.
         """
         with open(filepath, "r") as f:
             content = json.load(f)
-        for attr in ("client_id", "api_base_url", "client_secret"):
+        for attr in ("api_base_url", "client_id", "client_secret"):
             if attr not in content:
                 raise AttributeError(f"Missing attribute {attr} from {filepath}")
             if not content[attr]:
@@ -149,7 +145,9 @@ class CartoAuth:
             raise CredentialsError("api_base_url required")
 
         url = f"{self.api_base_url}/v3/connections/carto-dw/token"
-        headers = self._api_headers()
+
+        access_token = self.get_access_token()
+        headers = api_headers(access_token)
 
         response = requests.get(url, headers=headers)
 
@@ -213,7 +211,7 @@ class CartoAuth:
             msg += " and ".join(missing)
             raise CredentialsError(msg)
 
-        url = self.OAUTH_TOKEN_URL
+        url = OAUTH_TOKEN_URL
         headers = {"Content-Type": "application/x-www-form-urlencoded"}
         data = {
             "grant_type": "client_credentials",
@@ -246,13 +244,6 @@ class CartoAuth:
 
         return self._access_token
 
-    def _api_headers(self):
-        access_token = self.get_access_token()
-        return {
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {access_token}",
-        }
-
     def _token_expired(self):
         if not self._expiration_ts:
             return True
@@ -267,8 +258,9 @@ class CartoAuth:
 
         with open(self.cache_filepath, "w") as fw:
             info_to_cache = {
-                "accessToken": self._access_token,
-                "expiresTS": self._expiration_ts,
+                "api_base_url": self.api_base_url,
+                "access_token": self._access_token,
+                "expiration_ts": self._expiration_ts,
             }
             json.dump(info_to_cache, fw)
 
@@ -284,10 +276,44 @@ class CartoAuth:
 
         with open(self.cache_filepath, "r") as fr:
             info = json.load(fr)
-            self._access_token = info["accessToken"]
-            self._expiration_ts = info["expiresTS"]
+            if (
+                "api_base_url" in info
+                and "access_token" in info
+                and "expiration_ts" in info
+            ):
+                self.api_base_url = info["api_base_url"]
+                self._access_token = info["access_token"]
+                self._expiration_ts = info["expiration_ts"]
+            else:
+                return False
 
         if self._token_expired():
             return False
 
         return True
+
+
+def get_api_base_url(access_token):
+    url = "https://accounts.app.carto.com/accounts"
+    headers = api_headers(access_token)
+
+    response = requests.get(url, headers=headers)
+
+    try:
+        accounts = response.json()
+    except requests.exceptions.JSONDecodeError:
+        raise CredentialsError("Invalid Accounts response")
+
+    tenant_domain = accounts.get("tenant_domain")
+
+    if tenant_domain:
+        url = f"https://{tenant_domain}/config.yaml"
+        response = requests.get(url)
+
+        try:
+            config = yaml.safe_load(response.text)
+            api_base_url = config.get("apis").get("baseUrl")
+        except Exception:
+            raise CredentialsError("Invalid Config response")
+
+        return api_base_url
