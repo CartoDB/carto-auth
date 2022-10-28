@@ -171,13 +171,6 @@ class CartoPKCE:
 
         headers = {"Content-Type": "application/x-www-form-urlencoded"}
 
-        logger.debug(
-            "sending POST request to %s with Headers: %s and Body: %r",
-            OAUTH_TOKEN_URL,
-            headers,
-            payload,
-        )
-
         try:
             response = self._session.post(
                 OAUTH_TOKEN_URL,

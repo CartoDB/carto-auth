@@ -57,3 +57,12 @@ def test_token_from_input_mocked(mocker, requests_mock):
     carto_pkce = CartoPKCE(open_browser=False)
     code = carto_pkce.get_auth_response()
     assert code == "abcde"
+
+    mocker.patch(
+        "webbrowser.open_new",
+        return_value=True,
+    )
+
+    carto_pkce = CartoPKCE(open_browser=True)
+    code = carto_pkce.get_auth_response()
+    assert code == "abcde"

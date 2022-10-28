@@ -84,10 +84,7 @@ class CartoAuth:
             cache_filepath = get_cache_filepath()
 
         if cache_filepath and use_cache:
-            try:
-                return cls(cache_filepath=cache_filepath)
-            except CredentialsError:
-                pass
+            return cls(cache_filepath=cache_filepath)
 
         carto_pkce = CartoPKCE(open_browser=open_browser)
         code = carto_pkce.get_auth_response()
@@ -189,7 +186,7 @@ class CartoAuth:
         stored_token = self._load_cached_token()
         if not stored_token or not self._access_token or self._token_expired():
             try:
-                self._get_new_access_token()
+                self._renew_access_token()
             except CredentialsError:
                 if stored_token and self._token_expired():
                     raise CredentialsError(
@@ -200,17 +197,7 @@ class CartoAuth:
 
         return self._access_token
 
-    def _get_new_access_token(self):
-        if not self.client_id or not self.client_secret:
-            msg = "Missing "
-            missing = []
-            if not self.client_id:
-                missing.append("client_id")
-            if not self.client_secret:
-                missing.append("client_secret")
-            msg += " and ".join(missing)
-            raise CredentialsError(msg)
-
+    def _renew_access_token(self):
         url = OAUTH_TOKEN_URL
         headers = {"Content-Type": "application/x-www-form-urlencoded"}
         data = {
@@ -221,17 +208,7 @@ class CartoAuth:
         }
         response = requests.post(url, headers=headers, data=data)
         if response.status_code != 200:
-            error_msg = response.json()
-            error_subjects = {
-                403: "Permissions Error",
-                401: "Authorization Error",
-            }
-            error_subject = error_subjects.get(response.status_code, "Credential Error")
-            msg = (
-                f'{error_subject} - {error_msg.get("error")}: '
-                f'{error_msg.get("error_description")}'
-            )
-            raise CredentialsError(msg)
+            raise CredentialsError("Unable to renew the token")
         else:
             response_data = response.json()
             self._access_token = response_data["access_token"]
@@ -241,8 +218,6 @@ class CartoAuth:
             expiration_ts = now + datetime.timedelta(seconds=expires_in)
             self._expiration_ts = expiration_ts.timestamp()
             self._save_cached_token()
-
-        return self._access_token
 
     def _token_expired(self):
         if not self._expiration_ts:
@@ -296,7 +271,6 @@ class CartoAuth:
 def get_api_base_url(access_token):
     url = "https://accounts.app.carto.com/accounts"
     headers = api_headers(access_token)
-
     response = requests.get(url, headers=headers)
 
     try:
