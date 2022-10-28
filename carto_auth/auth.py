@@ -1,23 +1,28 @@
-import os
 import sys
 import json
-import yaml
-import datetime
 import requests
 
-from carto_auth.pkce import CartoPKCE
 from carto_auth.errors import CredentialsError
-from carto_auth.utils import get_cache_filepath, api_headers
-
-DEFAULT_API_BASE_URL = "https://gcp-us-east1.api.carto.com"
-OAUTH_TOKEN_URL = "https://auth.carto.com/oauth/token"
+from carto_auth.utils import (
+    get_cache_filepath,
+    load_cache_file,
+    save_cache_file,
+    api_headers,
+    is_token_expired,
+    get_oauth_token_info,
+    get_m2m_token_info,
+    get_api_base_url,
+)
 
 
 class CartoAuth:
     """CARTO Authentication object used to gather connect with the CARTO services.
 
     Args:
+        mode (str): Type of authentication: oauth, m2m.
         api_base_url (str, optional): Base URL for a CARTO account.
+        access_token (str, optional): Token already generated with CARTO.
+        expiration (int, optional): Time in seconds when the token will be expired.
         client_id (str, optional): Client id of a M2M application
             provided by CARTO.
         client_secret (str, optional): Client secret of a M2M application
@@ -26,42 +31,42 @@ class CartoAuth:
             Default "home()/.carto-auth/token.json".
         use_cache (bool, optional): Whether the stored cached token should be used.
             Default True.
-        access_token (str, optional): Token already generated with CARTO.
-        expires_in (str, optional): Time in seconds when the token will be expired.
+        open_browser (bool, optional): Whether the web browser should be opened
+            to authorize a user. Default True.
     """
 
     def __init__(
         self,
-        api_base_url=DEFAULT_API_BASE_URL,
+        mode,
+        api_base_url=None,
+        access_token=None,
+        expiration=None,
         client_id=None,
         client_secret=None,
         cache_filepath=None,
         use_cache=True,
-        access_token=None,
-        expires_in=None,
+        open_browser=True,
     ):
-        self.api_base_url = api_base_url
-        self.client_id = client_id
-        self.client_secret = client_secret
-        self.cache_filepath = (
+        self._mode = mode
+        self._api_base_url = api_base_url
+        self._cache_filepath = (
             get_cache_filepath() if cache_filepath is None else cache_filepath
         )
-        self.use_cache = use_cache
+        self._use_cache = use_cache
 
-        if access_token and expires_in:
-            now = datetime.datetime.utcnow()
-            expiration_ts = now + datetime.timedelta(seconds=expires_in)
-            self._expiration_ts = expiration_ts.timestamp()
+        if mode == "oauth":
             self._access_token = access_token
-            self._save_cached_token()
+            self._expiration = expiration
+            self._open_browser = open_browser
+        elif mode == "m2m":
+            self._access_token = access_token
+            self._expiration = expiration
+            self._client_id = client_id
+            self._client_secret = client_secret
         else:
-            if client_id and client_secret and api_base_url:
-                self._expiration_ts = None
-                self._access_token = None
-            else:
-                cached_token = self._load_cached_token()
-                if not cached_token:
-                    raise CredentialsError("Unable to locad cached token")
+            raise CredentialsError("Mode no supported")
+
+        self._save_cache_file()
 
     @classmethod
     def from_oauth(
@@ -83,27 +88,38 @@ class CartoAuth:
         if cache_filepath is None:
             cache_filepath = get_cache_filepath()
 
-        if cache_filepath and use_cache:
-            return cls(cache_filepath=cache_filepath)
+        if use_cache:
+            data = load_cache_file(cache_filepath)
+            if not is_token_expired(data.get("expiration")):
+                return cls(
+                    mode="oauth",
+                    api_base_url=data.get("api_base_url"),
+                    access_token=data.get("access_token"),
+                    expiration=data.get("expiration"),
+                    cache_filepath=cache_filepath,
+                    use_cache=use_cache,
+                    open_browser=open_browser,
+                )
 
-        carto_pkce = CartoPKCE(open_browser=open_browser)
-        code = carto_pkce.get_auth_response()
-        token_info = carto_pkce.get_token_info(code)
-        api_base_url = get_api_base_url(token_info["access_token"])
-
+        data = get_oauth_token_info(open_browser)
         return cls(
-            api_base_url=api_base_url,
+            mode="oauth",
+            api_base_url=get_api_base_url(data.get("access_token")),
+            access_token=data.get("access_token"),
+            expiration=data.get("expiration"),
             cache_filepath=cache_filepath,
-            access_token=token_info["access_token"],
-            expires_in=token_info["expires_in"],
+            use_cache=use_cache,
+            open_browser=open_browser,
         )
 
     @classmethod
-    def from_file(cls, filepath, use_cache=True):
+    def from_file(cls, filepath, cache_filepath=None, use_cache=True):
         """Create a CartoAuth object using CARTO credentials file.
 
         Args:
             filepath (str): File path of the CARTO credentials file.
+            cache_filepath (str, optional): File path where the token is stored.
+                Default "home()/.carto-auth/token.json".
             use_cache (bool, optional): Whether the stored cached token should be used.
                 Default True.
 
@@ -121,12 +137,52 @@ class CartoAuth:
             if not content[attr]:
                 raise ValueError(f"Missing value for {attr} in {filepath}")
 
+        api_base_url = content.get("api_base_url")
+        client_id = content.get("client_id")
+        client_secret = content.get("client_secret")
+
+        if cache_filepath is None:
+            cache_filepath = get_cache_filepath()
+
+        if use_cache:
+            data = load_cache_file(cache_filepath)
+            if not is_token_expired(data.get("expiration")):
+                return cls(
+                    mode="m2m",
+                    api_base_url=api_base_url,
+                    access_token=data.get("access_token"),
+                    expiration=data.get("expiration"),
+                    client_id=client_id,
+                    client_secret=client_secret,
+                    use_cache=use_cache,
+                )
+
+        data = get_m2m_token_info(client_id, client_secret)
         return cls(
-            client_id=content["client_id"],
-            client_secret=content["client_secret"],
-            api_base_url=content["api_base_url"],
+            mode="m2m",
+            api_base_url=api_base_url,
+            access_token=data.get("access_token"),
+            expiration=data.get("expiration"),
+            client_id=client_id,
+            client_secret=client_secret,
             use_cache=use_cache,
         )
+
+    def get_access_token(self):
+        if self._access_token and not is_token_expired(self._expiration):
+            return self._access_token
+
+        # Token expired
+        if self._mode == "oauth":
+            data = get_oauth_token_info(self._open_browser)
+        elif self._mode == "m2m":
+            data = get_m2m_token_info(self._client_id, self._client_secret)
+
+        self._access_token = data.get("access_token")
+        self._expiration = data.get("expiration")
+        self._save_cache_file()
+
+        return self._access_token
 
     def get_carto_dw_credentials(self) -> tuple:
         """Get the CARTO Data Warehouse credentials.
@@ -138,14 +194,13 @@ class CartoAuth:
             CredentialsError: If the API Base URL is not provided,
                 the response is not JSON or has invalid attributes.
         """
-        if not self.api_base_url:
+        if not self._api_base_url:
             raise CredentialsError("api_base_url required")
 
-        url = f"{self.api_base_url}/v3/connections/carto-dw/token"
+        url = f"{self._api_base_url}/v3/connections/carto-dw/token"
 
         access_token = self.get_access_token()
         headers = api_headers(access_token)
-
         response = requests.get(url, headers=headers)
 
         try:
@@ -179,115 +234,11 @@ class CartoAuth:
         cdw_project, cdw_token = self.get_carto_dw_credentials()
         return Client(cdw_project, credentials=Credentials(cdw_token))
 
-    def get_access_token(self):
-        if self._access_token and not self._token_expired():
-            return self._access_token
-
-        stored_token = self._load_cached_token()
-        if not stored_token or not self._access_token or self._token_expired():
-            try:
-                self._renew_access_token()
-            except CredentialsError:
-                if stored_token and self._token_expired():
-                    raise CredentialsError(
-                        "Stored token expired but no client_id and client_secret found"
-                    )
-                else:
-                    raise
-
-        return self._access_token
-
-    def _renew_access_token(self):
-        url = OAUTH_TOKEN_URL
-        headers = {"Content-Type": "application/x-www-form-urlencoded"}
-        data = {
-            "grant_type": "client_credentials",
-            "audience": "carto-cloud-native-api",
-            "client_id": self.client_id,
-            "client_secret": self.client_secret,
-        }
-        response = requests.post(url, headers=headers, data=data)
-        if response.status_code != 200:
-            raise CredentialsError("Unable to renew the token")
-        else:
-            response_data = response.json()
-            self._access_token = response_data["access_token"]
-            self.token_type = response_data["token_type"]
-            expires_in = response_data["expires_in"]
-            now = datetime.datetime.utcnow()
-            expiration_ts = now + datetime.timedelta(seconds=expires_in)
-            self._expiration_ts = expiration_ts.timestamp()
-            self._save_cached_token()
-
-    def _token_expired(self):
-        if not self._expiration_ts:
-            return True
-
-        now_utc_ts = datetime.datetime.utcnow().timestamp()
-
-        return now_utc_ts > self._expiration_ts
-
-    def _save_cached_token(self):
-        if not self.use_cache or not self.cache_filepath:
-            return False
-
-        with open(self.cache_filepath, "w") as fw:
-            info_to_cache = {
-                "api_base_url": self.api_base_url,
+    def _save_cache_file(self):
+        if self._use_cache and self._cache_filepath:
+            data = {
+                "api_base_url": self._api_base_url,
                 "access_token": self._access_token,
-                "expiration_ts": self._expiration_ts,
+                "expiration": self._expiration,
             }
-            json.dump(info_to_cache, fw)
-
-        return True
-
-    def _load_cached_token(self):
-        if (
-            not self.use_cache
-            or not self.cache_filepath
-            or not os.path.exists(self.cache_filepath)
-        ):
-            return False
-
-        with open(self.cache_filepath, "r") as fr:
-            info = json.load(fr)
-            if (
-                "api_base_url" in info
-                and "access_token" in info
-                and "expiration_ts" in info
-            ):
-                self.api_base_url = info["api_base_url"]
-                self._access_token = info["access_token"]
-                self._expiration_ts = info["expiration_ts"]
-            else:
-                return False
-
-        if self._token_expired():
-            return False
-
-        return True
-
-
-def get_api_base_url(access_token):
-    url = "https://accounts.app.carto.com/accounts"
-    headers = api_headers(access_token)
-    response = requests.get(url, headers=headers)
-
-    try:
-        accounts = response.json()
-    except requests.exceptions.JSONDecodeError:
-        raise CredentialsError("Invalid Accounts response")
-
-    tenant_domain = accounts.get("tenant_domain")
-
-    if tenant_domain:
-        url = f"https://{tenant_domain}/config.yaml"
-        response = requests.get(url)
-
-        try:
-            config = yaml.safe_load(response.text)
-            api_base_url = config.get("apis").get("baseUrl")
-        except Exception:
-            raise CredentialsError("Invalid Config response")
-
-        return api_base_url
+            save_cache_file(self._cache_filepath, data)

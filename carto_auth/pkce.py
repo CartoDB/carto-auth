@@ -9,6 +9,7 @@ import webbrowser
 from urllib.parse import urlparse, urlencode
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from urllib.parse import parse_qsl
+from datetime import datetime, timedelta
 
 from carto_auth.errors import CredentialsError
 
@@ -180,6 +181,17 @@ class CartoPKCE:
             )
             response.raise_for_status()
             token_info = response.json()
+
+            access_token = token_info["access_token"]
+            expires_in = token_info["expires_in"]
+            expiration = int(
+                (datetime.utcnow() + timedelta(seconds=expires_in)).timestamp()
+            )
+
+            return {
+                "access_token": access_token,
+                "expiration": expiration,
+            }
             return token_info
         except requests.exceptions.HTTPError as http_error:
             raise CredentialsError.from_http_error(http_error)
