@@ -90,7 +90,11 @@ class CartoAuth:
 
         if use_cache:
             data = load_cache_file(cache_filepath)
-            if data and not is_token_expired(data.get("expiration")):
+            if (
+                data
+                and data.get("api_base_url")
+                and not is_token_expired(data.get("expiration"))
+            ):
                 return cls(
                     mode=mode,
                     api_base_url=data.get("api_base_url"),
@@ -125,7 +129,7 @@ class CartoAuth:
 
         Raises:
             AttributeError: If the CARTO credentials file does not contain the
-                attributes "client_id", "client_secret".
+                attributes "api_base_url", "client_id", "client_secret".
             ValueError: If the CARTO credentials file does not contain any
                 attribute value.
         """
@@ -133,12 +137,13 @@ class CartoAuth:
 
         with open(filepath, "r") as f:
             content = json.load(f)
-        for attr in ("client_id", "client_secret"):
+        for attr in ("api_base_url", "client_id", "client_secret"):
             if attr not in content:
                 raise AttributeError(f"Missing attribute {attr} from {filepath}")
             if not content[attr]:
                 raise ValueError(f"Missing value for {attr} in {filepath}")
 
+        api_base_url = content.get("api_base_url")
         client_id = content.get("client_id")
         client_secret = content.get("client_secret")
 
@@ -147,7 +152,11 @@ class CartoAuth:
 
         if use_cache:
             data = load_cache_file(cache_filepath)
-            if data and not is_token_expired(data.get("expiration")):
+            if (
+                data
+                and data.get("api_base_url")
+                and not is_token_expired(data.get("expiration"))
+            ):
                 return cls(
                     mode=mode,
                     api_base_url=data.get("api_base_url"),
@@ -162,7 +171,7 @@ class CartoAuth:
         data = get_m2m_token_info(client_id, client_secret)
         return cls(
             mode=mode,
-            api_base_url=get_api_base_url(data.get("access_token")),
+            api_base_url=api_base_url,
             access_token=data.get("access_token"),
             expiration=data.get("expiration"),
             client_id=client_id,

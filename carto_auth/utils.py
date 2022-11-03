@@ -69,6 +69,9 @@ def get_api_base_url(access_token):
     except requests.exceptions.JSONDecodeError:
         raise CredentialsError("Invalid Accounts response")
 
+    if response_data.get("error"):
+        raise CredentialsError(response_data.get("error"))
+
     tenant_domain = response_data.get("tenant_domain")
 
     if tenant_domain:

@@ -7,16 +7,24 @@
 
 
 
+**Global Variables**
+---------------
+- **OAUTH_AUTHORIZE_URL**
+- **OAUTH_TOKEN_URL**
+- **AUDIENCE**
+- **CLIENT_ID**
+- **REDIRECT_URI**
+- **REDIRECT_URI_CLI**
 
 
 ---
 
-<a href="../carto_auth/pkce.py#L18"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../carto_auth/pkce.py#L26"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>class</kbd> `CartoPKCE`
 Implements PKCE Authorization Flow for client apps. 
 
-<a href="../carto_auth/pkce.py#L28"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../carto_auth/pkce.py#L29"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>method</kbd> `__init__`
 
@@ -37,7 +45,7 @@ Creates PKCE Auth flow.
 
 ---
 
-<a href="../carto_auth/pkce.py#L93"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../carto_auth/pkce.py#L92"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>method</kbd> `get_auth_response`
 
@@ -51,7 +59,7 @@ get_auth_response(open_browser=None)
 
 ---
 
-<a href="../carto_auth/pkce.py#L152"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../carto_auth/pkce.py#L151"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>method</kbd> `get_authorization_code`
 
@@ -65,7 +73,7 @@ get_authorization_code(response=None)
 
 ---
 
-<a href="../carto_auth/pkce.py#L76"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../carto_auth/pkce.py#L75"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>method</kbd> `get_authorize_url`
 
@@ -79,7 +87,7 @@ get_authorize_url(state=None)
 
 ---
 
-<a href="../carto_auth/pkce.py#L157"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../carto_auth/pkce.py#L156"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>method</kbd> `get_pkce_handshake_parameters`
 
@@ -93,7 +101,7 @@ get_pkce_handshake_parameters()
 
 ---
 
-<a href="../carto_auth/pkce.py#L161"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../carto_auth/pkce.py#L160"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>method</kbd> `get_token_info`
 
@@ -107,7 +115,7 @@ get_token_info(code=None)
 
 ---
 
-<a href="../carto_auth/pkce.py#L196"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../carto_auth/pkce.py#L202"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>method</kbd> `parse_response_code`
 
@@ -122,7 +130,7 @@ parse_response_code(url)
 
 ---
 
-<a href="../carto_auth/pkce.py#L212"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../carto_auth/pkce.py#L218"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>class</kbd> `RequestHandler`
 
@@ -134,7 +142,7 @@ parse_response_code(url)
 
 ---
 
-<a href="../carto_auth/pkce.py#L213"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../carto_auth/pkce.py#L219"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>method</kbd> `do_GET`
 
@@ -148,7 +156,7 @@ do_GET()
 
 ---
 
-<a href="../carto_auth/pkce.py#L240"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../carto_auth/pkce.py#L246"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>method</kbd> `log_message`
 

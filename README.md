@@ -33,7 +33,7 @@ from carto_auth import CartoAuth
 
 # Authentication
 carto_auth = CartoAuth.from_oauth()
-# carto_auth = CartoAuth.from_file("./carto_credentials.json")
+# carto_auth = CartoAuth.from_m2m("./carto_credentials.json")
 
 # Get access token
 access_token = carto_auth.get_access_token()

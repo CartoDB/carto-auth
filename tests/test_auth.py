@@ -115,10 +115,6 @@ def test_from_m2m__not_use_cache(mocker):
             "expiration": expiration,
         },
     )
-    get_api_base_url = mocker.patch(
-        "carto_auth.auth.get_api_base_url",
-        return_value="https://gcp-us-east1.api.carto.com",
-    )
 
     filepath = HERE / "fixtures/carto_credentials_ok.json"
     carto_auth = CartoAuth.from_m2m(filepath, use_cache=False)
@@ -133,7 +129,6 @@ def test_from_m2m__not_use_cache(mocker):
     load_mock.assert_not_called()
     save_mock.assert_not_called()
     get_m2m.assert_called_once()
-    get_api_base_url.assert_called_once()
 
 
 def test_from_m2m__use_cache(mocker):
@@ -148,7 +143,6 @@ def test_from_m2m__use_cache(mocker):
     )
     save_mock = mocker.patch("carto_auth.auth.save_cache_file")
     get_m2m = mocker.patch("carto_auth.auth.get_m2m_token_info")
-    get_api_base_url = mocker.patch("carto_auth.auth.get_api_base_url")
 
     filepath = HERE / "fixtures/carto_credentials_ok.json"
     carto_auth = CartoAuth.from_m2m(filepath, use_cache=True)
@@ -163,7 +157,6 @@ def test_from_m2m__use_cache(mocker):
     load_mock.assert_called_once()
     save_mock.assert_called_once()
     get_m2m.assert_not_called()
-    get_api_base_url.assert_not_called()
 
 
 def test_from_m2m__use_cache_expired(mocker):
@@ -185,10 +178,6 @@ def test_from_m2m__use_cache_expired(mocker):
             "expiration": expiration,  # new token expiration
         },
     )
-    get_api_base_url = mocker.patch(
-        "carto_auth.auth.get_api_base_url",
-        return_value="https://gcp-us-east1.api.carto.com",
-    )
 
     filepath = HERE / "fixtures/carto_credentials_ok.json"
     carto_auth = CartoAuth.from_m2m(filepath, use_cache=True)
@@ -203,7 +192,6 @@ def test_from_m2m__use_cache_expired(mocker):
     load_mock.assert_called_once()
     save_mock.assert_called_once()
     get_m2m.assert_called_once()
-    get_api_base_url.assert_called_once()
 
 
 def test_from_m2m_error():
