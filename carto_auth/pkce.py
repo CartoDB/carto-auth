@@ -172,18 +172,22 @@ class CartoPKCE:
 
         headers = {"Content-Type": "application/x-www-form-urlencoded"}
 
-        try:
-            response = self._session.post(
-                OAUTH_TOKEN_URL,
-                data=payload,
-                headers=headers,
-                verify=True,
-            )
-            response.raise_for_status()
-            token_info = response.json()
+        response = self._session.post(
+            OAUTH_TOKEN_URL,
+            data=payload,
+            headers=headers,
+            verify=True,
+        )
+        response.raise_for_status()
 
-            access_token = token_info["access_token"]
-            expires_in = token_info["expires_in"]
+        try:
+            response_data = response.json()
+        except requests.exceptions.JSONDecodeError:
+            raise CredentialsError("Invalid OAuth response")
+
+        if "access_token" in response_data and "expires_in" in response_data:
+            access_token = response_data["access_token"]
+            expires_in = response_data["expires_in"]
             expiration = int(
                 (datetime.utcnow() + timedelta(seconds=expires_in)).timestamp()
             )
@@ -192,9 +196,8 @@ class CartoPKCE:
                 "access_token": access_token,
                 "expiration": expiration,
             }
-            return token_info
-        except requests.exceptions.HTTPError as http_error:
-            raise CredentialsError.from_http_error(http_error)
+
+        raise CredentialsError("Invalid attributes in OAuth response")
 
     def parse_response_code(self, url):
         _, code = self._parse_auth_response_url(url)

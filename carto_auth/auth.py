@@ -49,9 +49,7 @@ class CartoAuth:
     ):
         self._mode = mode
         self._api_base_url = api_base_url
-        self._cache_filepath = (
-            get_cache_filepath() if cache_filepath is None else cache_filepath
-        )
+        self._cache_filepath = cache_filepath
         self._use_cache = use_cache
 
         if mode == "oauth":
@@ -79,20 +77,22 @@ class CartoAuth:
 
         Args:
             cache_filepath (str, optional): File path where the token is stored.
-                Default "home()/.carto-auth/token.json".
+                Default "home()/.carto-auth/token_oauth.json".
             use_cache (bool, optional): Whether the stored cached token should be used.
                 Default True.
             open_browser (bool, optional): Whether the web browser should be opened
                 to authorize a user. Default True.
         """
+        mode = "oauth"
+
         if cache_filepath is None:
-            cache_filepath = get_cache_filepath()
+            cache_filepath = get_cache_filepath(mode)
 
         if use_cache:
             data = load_cache_file(cache_filepath)
-            if not is_token_expired(data.get("expiration")):
+            if data and not is_token_expired(data.get("expiration")):
                 return cls(
-                    mode="oauth",
+                    mode=mode,
                     api_base_url=data.get("api_base_url"),
                     access_token=data.get("access_token"),
                     expiration=data.get("expiration"),
@@ -103,7 +103,7 @@ class CartoAuth:
 
         data = get_oauth_token_info(open_browser)
         return cls(
-            mode="oauth",
+            mode=mode,
             api_base_url=get_api_base_url(data.get("access_token")),
             access_token=data.get("access_token"),
             expiration=data.get("expiration"),
@@ -113,58 +113,61 @@ class CartoAuth:
         )
 
     @classmethod
-    def from_file(cls, filepath, cache_filepath=None, use_cache=True):
+    def from_m2m(cls, filepath, cache_filepath=None, use_cache=True):
         """Create a CartoAuth object using CARTO credentials file.
 
         Args:
             filepath (str): File path of the CARTO credentials file.
             cache_filepath (str, optional): File path where the token is stored.
-                Default "home()/.carto-auth/token.json".
+                Default "home()/.carto-auth/token_m2m.json".
             use_cache (bool, optional): Whether the stored cached token should be used.
                 Default True.
 
         Raises:
             AttributeError: If the CARTO credentials file does not contain the
-                attributes "api_base_url", "client_id", "client_secret".
+                attributes "client_id", "client_secret".
             ValueError: If the CARTO credentials file does not contain any
                 attribute value.
         """
+        mode = "m2m"
+
         with open(filepath, "r") as f:
             content = json.load(f)
-        for attr in ("api_base_url", "client_id", "client_secret"):
+        for attr in ("client_id", "client_secret"):
             if attr not in content:
                 raise AttributeError(f"Missing attribute {attr} from {filepath}")
             if not content[attr]:
                 raise ValueError(f"Missing value for {attr} in {filepath}")
 
-        api_base_url = content.get("api_base_url")
         client_id = content.get("client_id")
         client_secret = content.get("client_secret")
 
         if cache_filepath is None:
-            cache_filepath = get_cache_filepath()
+            cache_filepath = get_cache_filepath(mode)
 
         if use_cache:
             data = load_cache_file(cache_filepath)
-            if not is_token_expired(data.get("expiration")):
+            if data and not is_token_expired(data.get("expiration")):
                 return cls(
-                    mode="m2m",
-                    api_base_url=api_base_url,
+                    mode=mode,
+                    api_base_url=data.get("api_base_url"),
                     access_token=data.get("access_token"),
                     expiration=data.get("expiration"),
                     client_id=client_id,
                     client_secret=client_secret,
+                    cache_filepath=cache_filepath,
                     use_cache=use_cache,
                 )
 
         data = get_m2m_token_info(client_id, client_secret)
         return cls(
-            mode="m2m",
-            api_base_url=api_base_url,
+            mode=mode,
+            api_base_url=get_api_base_url(data.get("access_token")),
             access_token=data.get("access_token"),
             expiration=data.get("expiration"),
             client_id=client_id,
             client_secret=client_secret,
+            cache_filepath=cache_filepath,
             use_cache=use_cache,
         )
 
@@ -204,15 +207,15 @@ class CartoAuth:
         response = requests.get(url, headers=headers)
 
         try:
-            creds = response.json()
+            response_data = response.json()
         except requests.exceptions.JSONDecodeError:
             raise CredentialsError(
                 "Invalid CARTO DW Token response. "
                 "Please, make sure api_base_url is correctly defined"
             )
 
-        if "projectId" in creds and "token" in creds:
-            return creds["projectId"], creds["token"]
+        if "projectId" in response_data and "token" in response_data:
+            return response_data["projectId"], response_data["token"]
 
         raise CredentialsError(
             "Invalid attributes in CARTO DW Token response. "

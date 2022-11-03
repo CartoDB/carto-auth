@@ -10,16 +10,6 @@ from carto_auth.pkce import CartoPKCE
 from carto_auth.errors import CredentialsError
 
 
-def get_home_dir():
-    home_dir = Path.home() / ".carto-auth"
-    home_dir.mkdir(parents=True, exist_ok=True)
-    return home_dir
-
-
-def get_cache_filepath():
-    return get_home_dir() / "token.json"
-
-
 def api_headers(access_token):
     return {
         "Content-Type": "application/json",
@@ -43,14 +33,30 @@ def get_m2m_token_info(client_id, client_secret):
         "client_secret": client_secret,
     }
     response = requests.post(url, headers=headers, data=data)
-    response_data = response.json()
-    access_token = response_data["access_token"]
-    expires_in = response_data["expires_in"]
-    expiration = int((datetime.utcnow() + timedelta(seconds=expires_in)).timestamp())
-    return {
-        "access_token": access_token,
-        "expiration": expiration,
-    }
+
+    try:
+        response_data = response.json()
+    except requests.exceptions.JSONDecodeError:
+        raise CredentialsError(
+            "Invalid M2M Token response. "
+            "Please, make sure client_id and client_secret are correctly defined"
+        )
+
+    if "access_token" in response_data and "expires_in" in response_data:
+        access_token = response_data["access_token"]
+        expires_in = response_data["expires_in"]
+        expiration = int(
+            (datetime.utcnow() + timedelta(seconds=expires_in)).timestamp()
+        )
+        return {
+            "access_token": access_token,
+            "expiration": expiration,
+        }
+
+    raise CredentialsError(
+        "Invalid attributes in M2M Token response. "
+        "Please, make sure client_id and client_secret are correctly defined"
+    )
 
 
 def get_api_base_url(access_token):
@@ -59,11 +65,11 @@ def get_api_base_url(access_token):
     response = requests.get(url, headers=headers)
 
     try:
-        accounts = response.json()
+        response_data = response.json()
     except requests.exceptions.JSONDecodeError:
         raise CredentialsError("Invalid Accounts response")
 
-    tenant_domain = accounts.get("tenant_domain")
+    tenant_domain = response_data.get("tenant_domain")
 
     if tenant_domain:
         url = f"https://{tenant_domain}/config.yaml"
@@ -78,8 +84,18 @@ def get_api_base_url(access_token):
         return api_base_url
 
 
+def get_home_dir():
+    home_dir = Path.home() / ".carto-auth"
+    home_dir.mkdir(parents=True, exist_ok=True)
+    return home_dir
+
+
+def get_cache_filepath(mode):
+    return get_home_dir() / f"token_{mode}.json"
+
+
 def load_cache_file(cache_filepath):
-    if cache_filepath and not os.path.exists(cache_filepath):
+    if cache_filepath and os.path.exists(cache_filepath):
         with open(cache_filepath, "r") as f:
             data = json.load(f)
             if (
@@ -100,6 +116,6 @@ def is_token_expired(expiration):
     if not expiration:
         return True
 
-    now_utc_ts = datetime.datetime.utcnow().timestamp()
+    now = datetime.utcnow().timestamp()
 
-    return now_utc_ts > expiration
+    return now > expiration

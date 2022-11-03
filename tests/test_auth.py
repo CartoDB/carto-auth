@@ -1,150 +1,285 @@
-import os
 import pytest
-import datetime
+import pathlib
 
+from datetime import datetime, timedelta
 
 from carto_auth import CartoAuth, CredentialsError
 
+HERE = pathlib.Path(__file__).parent
 
-def test_carto_auth_from_parameters(requests_mock):
-    requests_mock.post(
-        "https://auth.carto.com/oauth/token",
-        json={
+
+def test_from_oauth__not_use_cache(mocker):
+    expiration = int((datetime.utcnow() + timedelta(seconds=10)).timestamp())
+    load_mock = mocker.patch("carto_auth.auth.load_cache_file")
+    save_mock = mocker.patch("carto_auth.auth.save_cache_file")
+    get_oauth = mocker.patch(
+        "carto_auth.auth.get_oauth_token_info",
+        return_value={
             "access_token": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpX",
-            "scope": "",
-            "expires_in": 86400,
-            "token_type": "Bearer",
+            "expiration": expiration,
         },
     )
-
-    carto_auth = CartoAuth(
-        client_id="1234", client_secret="1234567890", use_cache=False
-    )
-    assert carto_auth.client_id == "1234"
-    assert carto_auth.client_secret == "1234567890"
-    assert carto_auth.api_base_url == "https://gcp-us-east1.api.carto.com"
-    assert str(carto_auth.cache_filepath).endswith(".carto-auth/token.json")
-
-    access_token = carto_auth.get_access_token()
-    assert access_token == "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpX"
-
-
-def test_carto_auth_from_file(requests_mock):
-    requests_mock.post(
-        "https://auth.carto.com/oauth/token",
-        json={
-            "access_token": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpX",
-            "scope": "",
-            "expires_in": 86400,
-            "token_type": "Bearer",
-        },
+    get_api_base_url = mocker.patch(
+        "carto_auth.auth.get_api_base_url",
+        return_value="https://gcp-us-east1.api.carto.com",
     )
 
-    filepath = "fixtures/carto_credentials_ok.json"
-    fullpath = os.path.join(os.path.dirname(__file__), filepath)
-    carto_auth = CartoAuth.from_file(filepath=fullpath, use_cache=False)
-    assert carto_auth.client_id == "1234"
-    assert carto_auth.client_secret == "1234567890"
-    assert carto_auth.api_base_url == "https://api.carto.com"
-    assert carto_auth._token_expired() is True
-    assert str(carto_auth.cache_filepath).endswith(".carto-auth/token.json")
-
-    access_token = carto_auth.get_access_token()
-    assert access_token == "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpX"
-
-    current_utc_ts = datetime.datetime.utcnow().timestamp()
-    assert carto_auth._expiration_ts > current_utc_ts
-    assert carto_auth._token_expired() is False
-
-    filepath = "fixtures/carto_credentials_no_attr.json"
-    fullpath = os.path.join(os.path.dirname(__file__), filepath)
-    with pytest.raises(AttributeError):
-        CartoAuth.from_file(filepath=fullpath, use_cache=False)
-
-    filepath = "fixtures/carto_credentials_no_value.json"
-    fullpath = os.path.join(os.path.dirname(__file__), filepath)
-    with pytest.raises(ValueError):
-        CartoAuth.from_file(filepath=fullpath, use_cache=False)
-
-
-def test_carto_auth_from_oauth(mocker, requests_mock):
-    mocker.patch(
-        "carto_auth.pkce.CartoPKCE._input",
-        return_value="carto.com/autorize?code=abcde",
-    )
-    requests_mock.post(
-        "https://auth.carto.com/oauth/token",
-        json={
-            "access_token": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpX",
-            "scope": "",
-            "expires_in": 86400,
-            "token_type": "Bearer",
-        },
-    )
-
-    requests_mock.get(
-        "https://accounts.app.carto.com/accounts",
-        text="wrong json",
-    )
-    with pytest.raises(CredentialsError):
-        CartoAuth.from_oauth(open_browser=False, use_cache=False)
-
-    requests_mock.get(
-        "https://accounts.app.carto.com/accounts",
-        json={
-            "tenant_domain": "clausa.app.carto.com",
-        },
-    )
-    requests_mock.get(
-        "https://clausa.app.carto.com/config.yaml",
-        text="wrong yaml",
-    )
-    with pytest.raises(CredentialsError):
-        CartoAuth.from_oauth(open_browser=False, use_cache=False)
-
-    requests_mock.get(
-        "https://clausa.app.carto.com/config.yaml",
-        text="""
-        apis:
-            baseUrl: "https://gcp-us-east1.api.carto.com"
-        """,
-    )
     carto_auth = CartoAuth.from_oauth(open_browser=False, use_cache=False)
-    assert str(carto_auth.cache_filepath).endswith(".carto-auth/token.json")
+    assert carto_auth._mode == "oauth"
+    assert carto_auth._api_base_url == "https://gcp-us-east1.api.carto.com"
+    assert str(carto_auth._cache_filepath).endswith(".carto-auth/token_oauth.json")
+    assert carto_auth._use_cache is False
+    assert carto_auth._access_token == "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpX"
+    assert carto_auth._expiration == expiration
+    assert carto_auth._open_browser is False
+    load_mock.assert_not_called()
+    save_mock.assert_not_called()
+    get_oauth.assert_called_once()
+    get_api_base_url.assert_called_once()
+
+
+def test_from_oauth__use_cache(mocker):
+    expiration = int((datetime.utcnow() + timedelta(seconds=10)).timestamp())
+    load_mock = mocker.patch(
+        "carto_auth.auth.load_cache_file",
+        return_value={
+            "api_base_url": "https://gcp-us-east1.api.carto.com",
+            "access_token": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpX",
+            "expiration": expiration,
+        },
+    )
+    save_mock = mocker.patch("carto_auth.auth.save_cache_file")
+    get_oauth = mocker.patch("carto_auth.auth.get_oauth_token_info")
+    get_api_base_url = mocker.patch("carto_auth.auth.get_api_base_url")
+
+    carto_auth = CartoAuth.from_oauth(open_browser=False, use_cache=True)
+    assert carto_auth._mode == "oauth"
+    assert carto_auth._api_base_url == "https://gcp-us-east1.api.carto.com"
+    assert str(carto_auth._cache_filepath).endswith(".carto-auth/token_oauth.json")
+    assert carto_auth._use_cache is True
+    assert carto_auth._access_token == "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpX"
+    assert carto_auth._expiration == expiration
+    assert carto_auth._open_browser is False
+    load_mock.assert_called_once()
+    save_mock.assert_called_once()
+    get_oauth.assert_not_called()
+    get_api_base_url.assert_not_called()
+
+
+def test_from_oauth__use_cache_expired(mocker):
+    expiration = int((datetime.utcnow() - timedelta(seconds=10)).timestamp())
+    load_mock = mocker.patch(
+        "carto_auth.auth.load_cache_file",
+        return_value={
+            "api_base_url": "https://gcp-us-east1.api.carto.com",
+            "access_token": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpX",
+            "expiration": expiration,  # token expired
+        },
+    )
+    save_mock = mocker.patch("carto_auth.auth.save_cache_file")
+    expiration = int((datetime.utcnow() + timedelta(seconds=10)).timestamp())
+    get_oauth = mocker.patch(
+        "carto_auth.auth.get_oauth_token_info",
+        return_value={
+            "access_token": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpX",
+            "expiration": expiration,  # new token expiration
+        },
+    )
+    get_api_base_url = mocker.patch(
+        "carto_auth.auth.get_api_base_url",
+        return_value="https://gcp-us-east1.api.carto.com",
+    )
+
+    carto_auth = CartoAuth.from_oauth(open_browser=False, use_cache=True)
+    assert carto_auth._mode == "oauth"
+    assert carto_auth._api_base_url == "https://gcp-us-east1.api.carto.com"
+    assert str(carto_auth._cache_filepath).endswith(".carto-auth/token_oauth.json")
+    assert carto_auth._use_cache is True
+    assert carto_auth._access_token == "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpX"
+    assert carto_auth._expiration == expiration
+    assert carto_auth._open_browser is False
+    load_mock.assert_called_once()
+    save_mock.assert_called_once()
+    get_oauth.assert_called_once()
+    get_api_base_url.assert_called_once()
+
+
+def test_from_m2m__not_use_cache(mocker):
+    expiration = int((datetime.utcnow() + timedelta(seconds=10)).timestamp())
+    load_mock = mocker.patch("carto_auth.auth.load_cache_file")
+    save_mock = mocker.patch("carto_auth.auth.save_cache_file")
+    get_m2m = mocker.patch(
+        "carto_auth.auth.get_m2m_token_info",
+        return_value={
+            "access_token": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpX",
+            "expiration": expiration,
+        },
+    )
+    get_api_base_url = mocker.patch(
+        "carto_auth.auth.get_api_base_url",
+        return_value="https://gcp-us-east1.api.carto.com",
+    )
+
+    filepath = HERE / "fixtures/carto_credentials_ok.json"
+    carto_auth = CartoAuth.from_m2m(filepath, use_cache=False)
+    assert carto_auth._mode == "m2m"
+    assert carto_auth._api_base_url == "https://gcp-us-east1.api.carto.com"
+    assert str(carto_auth._cache_filepath).endswith(".carto-auth/token_m2m.json")
+    assert carto_auth._use_cache is False
+    assert carto_auth._access_token == "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpX"
+    assert carto_auth._expiration == expiration
+    assert carto_auth._client_id == "1234"
+    assert carto_auth._client_secret == "1234567890"
+    load_mock.assert_not_called()
+    save_mock.assert_not_called()
+    get_m2m.assert_called_once()
+    get_api_base_url.assert_called_once()
+
+
+def test_from_m2m__use_cache(mocker):
+    expiration = int((datetime.utcnow() + timedelta(seconds=10)).timestamp())
+    load_mock = mocker.patch(
+        "carto_auth.auth.load_cache_file",
+        return_value={
+            "api_base_url": "https://gcp-us-east1.api.carto.com",
+            "access_token": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpX",
+            "expiration": expiration,
+        },
+    )
+    save_mock = mocker.patch("carto_auth.auth.save_cache_file")
+    get_m2m = mocker.patch("carto_auth.auth.get_m2m_token_info")
+    get_api_base_url = mocker.patch("carto_auth.auth.get_api_base_url")
+
+    filepath = HERE / "fixtures/carto_credentials_ok.json"
+    carto_auth = CartoAuth.from_m2m(filepath, use_cache=True)
+    assert carto_auth._mode == "m2m"
+    assert carto_auth._api_base_url == "https://gcp-us-east1.api.carto.com"
+    assert str(carto_auth._cache_filepath).endswith(".carto-auth/token_m2m.json")
+    assert carto_auth._use_cache is True
+    assert carto_auth._access_token == "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpX"
+    assert carto_auth._expiration == expiration
+    assert carto_auth._client_id == "1234"
+    assert carto_auth._client_secret == "1234567890"
+    load_mock.assert_called_once()
+    save_mock.assert_called_once()
+    get_m2m.assert_not_called()
+    get_api_base_url.assert_not_called()
+
+
+def test_from_m2m__use_cache_expired(mocker):
+    expiration = int((datetime.utcnow() - timedelta(seconds=10)).timestamp())
+    load_mock = mocker.patch(
+        "carto_auth.auth.load_cache_file",
+        return_value={
+            "api_base_url": "https://gcp-us-east1.api.carto.com",
+            "access_token": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpX",
+            "expiration": expiration,  # token expired
+        },
+    )
+    save_mock = mocker.patch("carto_auth.auth.save_cache_file")
+    expiration = int((datetime.utcnow() + timedelta(seconds=10)).timestamp())
+    get_m2m = mocker.patch(
+        "carto_auth.auth.get_m2m_token_info",
+        return_value={
+            "access_token": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpX",
+            "expiration": expiration,  # new token expiration
+        },
+    )
+    get_api_base_url = mocker.patch(
+        "carto_auth.auth.get_api_base_url",
+        return_value="https://gcp-us-east1.api.carto.com",
+    )
+
+    filepath = HERE / "fixtures/carto_credentials_ok.json"
+    carto_auth = CartoAuth.from_m2m(filepath, use_cache=True)
+    assert carto_auth._mode == "m2m"
+    assert carto_auth._api_base_url == "https://gcp-us-east1.api.carto.com"
+    assert str(carto_auth._cache_filepath).endswith(".carto-auth/token_m2m.json")
+    assert carto_auth._use_cache is True
+    assert carto_auth._access_token == "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpX"
+    assert carto_auth._expiration == expiration
+    assert carto_auth._client_id == "1234"
+    assert carto_auth._client_secret == "1234567890"
+    load_mock.assert_called_once()
+    save_mock.assert_called_once()
+    get_m2m.assert_called_once()
+    get_api_base_url.assert_called_once()
+
+
+def test_from_m2m_error():
+    filepath = HERE / "fixtures/carto_credentials_no_attr.json"
+    with pytest.raises(AttributeError):
+        CartoAuth.from_m2m(filepath)
+
+    filepath = HERE / "fixtures/carto_credentials_no_value.json"
+    with pytest.raises(ValueError):
+        CartoAuth.from_m2m(filepath)
+
+
+def test_get_access_token(mocker):
+    save_mock = mocker.patch("carto_auth.auth.save_cache_file")
+
+    access_token = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpX"
+    expiration = int((datetime.utcnow() + timedelta(seconds=10)).timestamp())
+    carto_auth = CartoAuth("oauth", access_token=access_token, expiration=expiration)
 
     access_token = carto_auth.get_access_token()
-    assert access_token == "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpX"
 
-    cache_filepath = "fixtures/.carto_token_ok.json"
-    fullpath = os.path.join(os.path.dirname(__file__), cache_filepath)
-    carto_auth = CartoAuth.from_oauth(
-        cache_filepath=fullpath, open_browser=False, use_cache=True
+    assert access_token == access_token
+    assert carto_auth._access_token == access_token
+    assert carto_auth._expiration == expiration
+    save_mock.assert_not_called()
+
+
+def test_get_access_token_oauth_expired(mocker):
+    new_expiration = int((datetime.utcnow() + timedelta(seconds=10)).timestamp())
+    get_oauth = mocker.patch(
+        "carto_auth.auth.get_oauth_token_info",
+        return_value={
+            "access_token": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpX",
+            "expiration": new_expiration,
+        },
     )
-    assert str(carto_auth.cache_filepath).endswith("fixtures/.carto_token_ok.json")
+
+    access_token = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpX"
+    expiration = int((datetime.utcnow() - timedelta(seconds=10)).timestamp())
+    carto_auth = CartoAuth("oauth", access_token=access_token, expiration=expiration)
+
+    access_token = carto_auth.get_access_token()
+
+    assert access_token == access_token
+    assert carto_auth._access_token == access_token
+    assert carto_auth._expiration == new_expiration
+    get_oauth.assert_called_once()
 
 
-def test_handle_file_token_cached_on_file():
-    cache_filepath = "fixtures/.carto_token_ok.json"
-    fullpath = os.path.join(os.path.dirname(__file__), cache_filepath)
-    carto_auth = CartoAuth(cache_filepath=fullpath)
-    assert str(carto_auth.cache_filepath).endswith(cache_filepath)
+def test_get_access_token_m2m_expired(mocker):
+    new_expiration = int((datetime.utcnow() + timedelta(seconds=10)).timestamp())
+    get_m2m = mocker.patch(
+        "carto_auth.auth.get_m2m_token_info",
+        return_value={
+            "access_token": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpX",
+            "expiration": new_expiration,
+        },
+    )
 
-    saved_token = "testAccessTokenlkjsdofiuqwelrkjas908d7"  # encoded on the file
-    assert saved_token == carto_auth.get_access_token()
+    access_token = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpX"
+    expiration = int((datetime.utcnow() - timedelta(seconds=10)).timestamp())
+    carto_auth = CartoAuth("m2m", access_token=access_token, expiration=expiration)
 
-    expected_expiration_ts = 32503676400  # encoded on the file
-    assert carto_auth._expiration_ts == expected_expiration_ts
-    assert carto_auth._token_expired() is False
+    access_token = carto_auth.get_access_token()
 
-
-def test_handle_file_token_cached_expired_on_file():
-    cache_filepath = "fixtures/.carto_token_expired.json"
-    fullpath = os.path.join(os.path.dirname(__file__), cache_filepath)
-    with pytest.raises(CredentialsError):
-        CartoAuth(cache_filepath=fullpath)
+    assert access_token == access_token
+    assert carto_auth._access_token == access_token
+    assert carto_auth._expiration == new_expiration
+    get_m2m.assert_called_once()
 
 
-def test_carto_dw_credentials(requests_mock):
+def test_carto_dw_credentials(mocker, requests_mock):
+    mocker.patch(
+        "carto_auth.auth.CartoAuth.get_access_token",
+        return_value="eyJhbGciOiJSUzI1NiIsInR5cCI6IkpX",
+    )
     requests_mock.get(
         "https://gcp-us-east1.api.carto.com/v3/connections/carto-dw/token",
         json={
@@ -152,21 +287,45 @@ def test_carto_dw_credentials(requests_mock):
             "token": "token-mock",
         },
     )
-    cache_filepath = "fixtures/.carto_token_ok.json"
-    fullpath = os.path.join(os.path.dirname(__file__), cache_filepath)
-    carto_auth = CartoAuth(cache_filepath=fullpath)
+
+    api_base_url = "https://gcp-us-east1.api.carto.com"
+    access_token = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpX"
+    expiration = int((datetime.utcnow() + timedelta(seconds=10)).timestamp())
+    carto_auth = CartoAuth(
+        "oauth",
+        api_base_url=api_base_url,
+        access_token=access_token,
+        expiration=expiration,
+    )
+
     carto_dw_project_id, carto_dw_token = carto_auth.get_carto_dw_credentials()
+
     assert carto_dw_project_id == "project-id-mock"
     assert carto_dw_token == "token-mock"
 
+
+def test_carto_dw_credentials_error(mocker, requests_mock):
+    mocker.patch(
+        "carto_auth.auth.CartoAuth.get_access_token",
+        return_value="eyJhbGciOiJSUzI1NiIsInR5cCI6IkpX",
+    )
     requests_mock.get(
         "https://gcp-us-east1.api.carto.com/v3/connections/carto-dw/token",
         text="wrong json",
     )
-    cache_filepath = "fixtures/.carto_token_ok.json"
-    fullpath = os.path.join(os.path.dirname(__file__), cache_filepath)
+
+    api_base_url = "https://gcp-us-east1.api.carto.com"
+    access_token = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpX"
+    expiration = int((datetime.utcnow() + timedelta(seconds=10)).timestamp())
+    carto_auth = CartoAuth(
+        "oauth",
+        api_base_url=api_base_url,
+        access_token=access_token,
+        expiration=expiration,
+    )
+
     with pytest.raises(CredentialsError):
-        CartoAuth(cache_filepath=fullpath).get_carto_dw_credentials()
+        carto_auth.get_carto_dw_credentials()
 
     requests_mock.get(
         "https://gcp-us-east1.api.carto.com/v3/connections/carto-dw/token",
@@ -174,14 +333,8 @@ def test_carto_dw_credentials(requests_mock):
             "token": "token-mock",
         },
     )
-    cache_filepath = "fixtures/.carto_token_ok.json"
-    fullpath = os.path.join(os.path.dirname(__file__), cache_filepath)
     with pytest.raises(CredentialsError):
-        CartoAuth(cache_filepath=fullpath).get_carto_dw_credentials()
-
-
-def test_carto_dw_client(requests_mock):
-    from google.cloud.bigquery import Client
+        carto_auth.get_carto_dw_credentials()
 
     requests_mock.get(
         "https://gcp-us-east1.api.carto.com/v3/connections/carto-dw/token",
@@ -190,30 +343,30 @@ def test_carto_dw_client(requests_mock):
             "token": "token-mock",
         },
     )
-    cache_filepath = "fixtures/.carto_token_ok.json"
-    fullpath = os.path.join(os.path.dirname(__file__), cache_filepath)
-    carto_auth = CartoAuth(cache_filepath=fullpath)
-
-    bq_client = carto_auth.get_carto_dw_client()
-    assert bq_client is not None
-
-    assert hasattr(bq_client, "query")
-    assert isinstance(bq_client, Client)
+    carto_auth = CartoAuth("oauth", access_token=access_token, expiration=expiration)
+    with pytest.raises(CredentialsError):
+        carto_auth.get_carto_dw_credentials()
 
 
-def test_get_access_token(requests_mock):
-    access_token = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6InUzWjRJOVBhUVZ2RjA2MWVaZHlfNCJ9.eyJpc3MiOiJodHRwczovL29yYW1pcmV6LWF1dGguZXUuYXV0aDAuY29tLyIsInN1YiI6Imdvb2dsZS1vYXV0aDJ8MTEwNjc5NzE5MDU5ODk3NjU5Njc4IiwiYXVkIjoiYXBpL2ZydWl0IiwiaWF0IjoxNjYxNzU4MTE1LCJleHAiOjE2NjE3NjUzMTUsImF6cCI6InN0TExYYnF1b2o2dnVOUDNCYUZaeEhmNE1UcFpLdWdhIiwic2NvcGUiOiJ3cml0ZTp1c3VhbC1mcnVpdCJ9.E5DbjwEOlbm37GkJPqkvh2ZZjlxtvERItd4loiWNcUXrzGQ34PBiC-kESeIFk_7AicldWxxGmIBZKycBflwoDNkR3CRchgW2CW4lPK7SSNAVR5iTwPPAHAhLwgwgKNmldOv5Wq7sDhf7Rc0JAQAdBqaTHXQrae57LNlnxVN--uJdq3oc4LYE3NDvQJIHlWaPDPsE6IgTOdQuS5bY867Ux3u3iLxEJpOevsce0d8l2or3se6GTX8rTb2Ip8rTkIrll0qzl-uwgTy0AoD-HM748W_FA1ScdTboilCzko6cFsMIDzb-ou-5BQPkIp6GtsYZuwrSD_t6t_ZrP46ehoUd1A"  # noqa: E501
-    expire_in = 7200
-    carto_auth = CartoAuth(access_token=access_token, expires_in=expire_in)
-    ca_access_token = carto_auth.get_access_token()
-    assert ca_access_token == access_token
-    assert carto_auth._token_expired() is False
+def test_carto_dw_client(mocker):
+    from google.cloud.bigquery import Client
 
-    requests_mock.post(
-        "https://auth.carto.com/oauth/token",
-        status_code=400,
+    get_creds = mocker.patch(
+        "carto_auth.auth.CartoAuth.get_carto_dw_credentials",
+        return_value=("project-id-mock", "token-mock"),
     )
 
-    carto_auth = CartoAuth(access_token=access_token, expires_in=-1, use_cache=False)
-    with pytest.raises(CredentialsError):
-        carto_auth.get_access_token()
+    api_base_url = "https://gcp-us-east1.api.carto.com"
+    access_token = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpX"
+    expiration = int((datetime.utcnow() + timedelta(seconds=10)).timestamp())
+    carto_auth = CartoAuth(
+        "oauth",
+        api_base_url=api_base_url,
+        access_token=access_token,
+        expiration=expiration,
+    )
+
+    bq_client = carto_auth.get_carto_dw_client()
+    assert isinstance(bq_client, Client)
+    assert bq_client.project == "project-id-mock"
+    get_creds.assert_called_once()
