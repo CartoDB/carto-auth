@@ -17,7 +17,7 @@ lint:
 	$(BIN)/flake8 carto_auth tests examples setup.py
 
 test:
-	$(BIN)/pytest tests
+	$(BIN)/pytest tests --cov=carto_auth --verbose
 
 docs:
 	$(BIN)/lazydocs carto_auth --validate --output-path="docs" --overview-file="README.md"

@@ -18,9 +18,7 @@ setup(
     license="BSD 3-Clause",
     packages=find_packages(exclude=["examples", "tests"]),
     python_requires=">=3.7",
-    install_requires=[
-        "requests",
-    ],
+    install_requires=["requests", "pyyaml"],
     extras_require={"carto-dw": ["google-auth", "google-cloud-bigquery>=2.34.4"]},
     classifiers=[
         "Development Status :: 4 - Beta",
