@@ -62,7 +62,7 @@ class CartoAuth:
             self._client_id = client_id
             self._client_secret = client_secret
         else:
-            raise CredentialsError("Mode no supported")
+            raise CredentialsError("Mode not supported. Available modes: oauth, m2m")
 
         self._save_cache_file()
 
