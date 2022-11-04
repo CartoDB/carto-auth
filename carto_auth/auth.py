@@ -180,6 +180,9 @@ class CartoAuth:
             use_cache=use_cache,
         )
 
+    def get_api_base_url(self):
+        return self._api_base_url
+
     def get_access_token(self):
         if self._access_token and not is_token_expired(self._expiration):
             return self._access_token

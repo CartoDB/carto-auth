@@ -204,6 +204,17 @@ def test_from_m2m_error():
         CartoAuth.from_m2m(filepath)
 
 
+def test_get_api_base_url(mocker):
+    save_mock = mocker.patch("carto_auth.auth.save_cache_file")
+
+    carto_auth = CartoAuth("oauth", api_base_url="https://gcp-us-east1.api.carto.com")
+
+    api_base_url = carto_auth.get_api_base_url()
+
+    assert api_base_url == "https://gcp-us-east1.api.carto.com"
+    save_mock.assert_not_called()
+
+
 def test_get_access_token(mocker):
     save_mock = mocker.patch("carto_auth.auth.save_cache_file")
 

@@ -6,6 +6,9 @@ from carto_auth import CartoAuth
 carto_auth = CartoAuth.from_oauth()
 # carto_auth = CartoAuth.from_m2m("./carto_credentials.json")
 
+# Get api base url
+api_base_url = carto_auth.get_api_base_url()
+
 # Get access token
 access_token = carto_auth.get_access_token()
 
