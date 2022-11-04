@@ -104,7 +104,7 @@ Create a CartoAuth object using OAuth with CARTO.
 
 ---
 
-<a href="../carto_auth/auth.py#L183"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../carto_auth/auth.py#L186"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>method</kbd> `get_access_token`
 
@@ -118,7 +118,21 @@ get_access_token()
 
 ---
 
-<a href="../carto_auth/auth.py#L234"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../carto_auth/auth.py#L183"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+
+### <kbd>method</kbd> `get_api_base_url`
+
+```python
+get_api_base_url()
+```
+
+
+
+
+
+---
+
+<a href="../carto_auth/auth.py#L237"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>method</kbd> `get_carto_dw_client`
 
@@ -132,7 +146,7 @@ It requires extra dependencies carto-auth[carto-dw] to be installed.
 
 ---
 
-<a href="../carto_auth/auth.py#L199"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../carto_auth/auth.py#L202"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>method</kbd> `get_carto_dw_credentials`
 
