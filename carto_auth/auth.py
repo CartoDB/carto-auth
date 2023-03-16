@@ -23,9 +23,9 @@ class CartoAuth:
         api_base_url (str, optional): Base URL for a CARTO account.
         access_token (str, optional): Token already generated with CARTO.
         expiration (int, optional): Time in seconds when the token will be expired.
-        client_id (str, optional): Client id of a M2M application
+        client_id (str, optional): Client id of an M2M application
             provided by CARTO.
-        client_secret (str, optional): Client secret of a M2M application
+        client_secret (str, optional): Client secret of an M2M application
             provided by CARTO.
         cache_filepath (str, optional): File path where the token is stored.
             Default "home()/.carto-auth/token.json".
@@ -114,6 +114,73 @@ class CartoAuth:
             cache_filepath=cache_filepath,
             use_cache=use_cache,
             open_browser=open_browser,
+        )
+
+    @classmethod
+    def from_m2m_token(
+        cls,
+        api_base_url,
+        client_id,
+        client_secret,
+        cache_filepath=None,
+        use_cache=True,
+    ):
+        """Create a CartoAuth object using an M2M token.
+
+        Args:
+            api_base_url (str): Base URL for a CARTO account.
+            client_id (str, optional): Client id of an M2M application
+                provided by CARTO.
+            client_secret (str, optional): Client secret of an M2M application
+                provided by CARTO.
+            cache_filepath (str, optional): File path where the token is stored.
+                Default "home()/.carto-auth/token_m2m.json".
+            use_cache (bool, optional): Whether the stored cached token should be used.
+                Default True.
+
+        Raises:
+            ValueError: If "api_base_url", "client_id", "client_secret" parameters are not provided.
+        """
+        if api_base_url is None:
+            raise ValueError("api_base_url is required")
+        if client_id is None:
+            raise ValueError("client_id is required")
+        if client_secret is None:
+            raise ValueError("client_secret is required")
+
+        mode = "m2m"
+
+        if cache_filepath is None:
+            cache_filepath = get_cache_filepath(mode)
+
+        if use_cache:
+            data = load_cache_file(cache_filepath)
+            if (
+                data
+                and data.get("api_base_url")
+                and not is_token_expired(data.get("expiration"))
+            ):
+                return cls(
+                    mode=mode,
+                    api_base_url=data.get("api_base_url"),
+                    access_token=data.get("access_token"),
+                    expiration=data.get("expiration"),
+                    client_id=client_id,
+                    client_secret=client_secret,
+                    cache_filepath=cache_filepath,
+                    use_cache=use_cache,
+                )
+
+        data = get_m2m_token_info(client_id, client_secret)
+        return cls(
+            mode=mode,
+            api_base_url=api_base_url,
+            access_token=data.get("access_token"),
+            expiration=data.get("expiration"),
+            client_id=client_id,
+            client_secret=client_secret,
+            cache_filepath=cache_filepath,
+            use_cache=use_cache,
         )
 
     @classmethod
