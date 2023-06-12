@@ -4,7 +4,7 @@ from carto_auth.pkce import CartoPKCE
 
 
 def test_url_properly_created():
-    carto_pkce = CartoPKCE(open_browser=False)
+    carto_pkce = CartoPKCE(open_browser=False, org="org_123")
     url = carto_pkce.get_authorize_url()
     parsed_url = urlparse(url)
     parsed_qs = parse_qs(parsed_url.query)
@@ -14,6 +14,7 @@ def test_url_properly_created():
     assert parsed_qs["response_type"] == ["code"]
     assert parsed_qs["client_id"][0] == "0dxb8HR3ATXCxJiPOJVHsLoHoAtbRX6u"
     assert len(parsed_qs["code_challenge"]) > 0
+    assert parsed_qs["organization"] == ["org_123"]
 
 
 def test_token_from_input_prompt(mocker, requests_mock):

@@ -52,7 +52,7 @@ def test_from_oauth__use_cache(mocker):
     get_oauth = mocker.patch("carto_auth.auth.get_oauth_token_info")
     get_api_base_url = mocker.patch("carto_auth.auth.get_api_base_url")
 
-    carto_auth = CartoAuth.from_oauth(open_browser=False, use_cache=True)
+    carto_auth = CartoAuth.from_oauth(open_browser=False, use_cache=True, org="org_123")
     assert carto_auth._mode == "oauth"
     assert carto_auth._api_base_url == "https://gcp-us-east1.api.carto.com"
     assert str(carto_auth._cache_filepath).endswith(".carto-auth/token_oauth.json")
@@ -60,6 +60,7 @@ def test_from_oauth__use_cache(mocker):
     assert carto_auth._access_token == "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpX"
     assert carto_auth._expiration == expiration
     assert carto_auth._open_browser is False
+    assert carto_auth._org == "org_123"
     load_mock.assert_called_once()
     save_mock.assert_called_once()
     get_oauth.assert_not_called()
@@ -90,7 +91,7 @@ def test_from_oauth__use_cache_expired(mocker):
         return_value="https://gcp-us-east1.api.carto.com",
     )
 
-    carto_auth = CartoAuth.from_oauth(open_browser=False, use_cache=True)
+    carto_auth = CartoAuth.from_oauth(open_browser=False, use_cache=True, org="org_123")
     assert carto_auth._mode == "oauth"
     assert carto_auth._api_base_url == "https://gcp-us-east1.api.carto.com"
     assert str(carto_auth._cache_filepath).endswith(".carto-auth/token_oauth.json")
@@ -98,6 +99,7 @@ def test_from_oauth__use_cache_expired(mocker):
     assert carto_auth._access_token == "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpX"
     assert carto_auth._expiration == expiration
     assert carto_auth._open_browser is False
+    assert carto_auth._org == "org_123"
     load_mock.assert_called_once()
     save_mock.assert_called_once()
     get_oauth.assert_called_once()
