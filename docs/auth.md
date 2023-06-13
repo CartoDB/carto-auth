@@ -108,7 +108,7 @@ Create a CartoAuth object using OAuth with CARTO.
  - <b>`use_cache`</b> (bool, optional):  Whether the stored cached token should be used.  Default True. 
  - <b>`open_browser`</b> (bool, optional):  Whether the web browser should be opened  to authorize a user. Default True. 
  - <b>`api_base_url`</b> (str, optional):  Base URL for a CARTO account. 
- - <b>`org`</b> (str, optional):  Single Sign-On (SSO) CARTO account.  By default this feature is disabled. 
+ - <b>`org`</b> (str, optional):  Single Sign-On (SSO) CARTO account.
 
 ---
 
