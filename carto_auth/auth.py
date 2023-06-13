@@ -68,10 +68,7 @@ class CartoAuth:
 
     @classmethod
     def from_oauth(
-        cls,
-        cache_filepath=None,
-        use_cache=True,
-        open_browser=True,
+        cls, cache_filepath=None, use_cache=True, open_browser=True, api_base_url=None
     ):
         """Create a CartoAuth object using OAuth with CARTO.
 
@@ -82,6 +79,7 @@ class CartoAuth:
                 Default True.
             open_browser (bool, optional): Whether the web browser should be opened
                 to authorize a user. Default True.
+            api_base_url (str, optional): Base URL for a CARTO account.
         """
         mode = "oauth"
 
@@ -108,7 +106,7 @@ class CartoAuth:
         data = get_oauth_token_info(open_browser)
         return cls(
             mode=mode,
-            api_base_url=get_api_base_url(data.get("access_token")),
+            api_base_url=api_base_url or get_api_base_url(data.get("access_token")),
             access_token=data.get("access_token"),
             expiration=data.get("expiration"),
             cache_filepath=cache_filepath,
