@@ -33,6 +33,7 @@ class CartoAuth:
             Default True.
         open_browser (bool, optional): Whether the web browser should be opened
             to authorize a user. Default True.
+        org (str, optional): Single Sign-On (SSO) organization in CARTO.
     """
 
     def __init__(
@@ -87,6 +88,7 @@ class CartoAuth:
             open_browser (bool, optional): Whether the web browser should be opened
                 to authorize a user. Default True.
             api_base_url (str, optional): Base URL for a CARTO account.
+            org (str, optional): Single Sign-On (SSO) organization in CARTO.
         """
         mode = "oauth"
 

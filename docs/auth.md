@@ -29,8 +29,9 @@ CARTO Authentication object used to gather connect with the CARTO services.
  - <b>`cache_filepath`</b> (str, optional):  File path where the token is stored.  Default "home()/.carto-auth/token.json". 
  - <b>`use_cache`</b> (bool, optional):  Whether the stored cached token should be used.  Default True. 
  - <b>`open_browser`</b> (bool, optional):  Whether the web browser should be opened  to authorize a user. Default True. 
+ - <b>`org`</b> (str, optional):  Single Sign-On (SSO) organization in CARTO. 
 
-<a href="../carto_auth/auth.py#L38"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../carto_auth/auth.py#L39"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>method</kbd> `__init__`
 
@@ -44,7 +45,8 @@ __init__(
     client_secret=None,
     cache_filepath=None,
     use_cache=True,
-    open_browser=True
+    open_browser=True,
+    org=None
 )
 ```
 
@@ -57,7 +59,7 @@ __init__(
 
 ---
 
-<a href="../carto_auth/auth.py#L127"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../carto_auth/auth.py#L128"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>classmethod</kbd> `from_m2m`
 
@@ -108,11 +110,11 @@ Create a CartoAuth object using OAuth with CARTO.
  - <b>`use_cache`</b> (bool, optional):  Whether the stored cached token should be used.  Default True. 
  - <b>`open_browser`</b> (bool, optional):  Whether the web browser should be opened  to authorize a user. Default True. 
  - <b>`api_base_url`</b> (str, optional):  Base URL for a CARTO account. 
- - <b>`org`</b> (str, optional):  [Single Sign-On (SSO)](https://docs.carto.com/carto-user-manual/settings/users-and-groups/sso) CARTO organization identity.
+ - <b>`org`</b> (str, optional):  Single Sign-On (SSO) organization in CARTO. 
 
 ---
 
-<a href="../carto_auth/auth.py#L193"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../carto_auth/auth.py#L195"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>method</kbd> `get_access_token`
 
@@ -126,7 +128,7 @@ get_access_token()
 
 ---
 
-<a href="../carto_auth/auth.py#L190"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../carto_auth/auth.py#L192"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>method</kbd> `get_api_base_url`
 
@@ -140,7 +142,7 @@ get_api_base_url()
 
 ---
 
-<a href="../carto_auth/auth.py#L244"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../carto_auth/auth.py#L246"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>method</kbd> `get_carto_dw_client`
 
@@ -154,7 +156,7 @@ It requires extra dependencies carto-auth[carto-dw] to be installed.
 
 ---
 
-<a href="../carto_auth/auth.py#L209"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../carto_auth/auth.py#L211"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>method</kbd> `get_carto_dw_credentials`
 

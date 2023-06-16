@@ -30,7 +30,7 @@ api_headers(access_token)
 ## <kbd>function</kbd> `get_oauth_token_info`
 
 ```python
-get_oauth_token_info(open_browser=True)
+get_oauth_token_info(open_browser=True, org=None)
 ```
 
 
