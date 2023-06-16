@@ -65,4 +65,20 @@ Check the development [documentation](./docs) section.
 ## Contributors
 
 - [Jesús Arroyo](https://github.com/jesus89)
+- [Valentin de la Cruz](https://github.com/vdelacruzb)
 - [Óscar Ramírez](https://github.com/tuxskar)
+
+## Release
+
+The release to PyPI requires an API token and setting the following file locally with the token: `~/.pypirc`
+
+```
+[distutils]
+index-servers =
+    carto-auth
+
+[carto-auth]
+repository = https://upload.pypi.org/legacy/
+username = __token__
+password = <PyPI token>
+```

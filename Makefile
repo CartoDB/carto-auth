@@ -27,7 +27,7 @@ docs:
 publish-pypi:
 	rm -rf $(DIST) $(BUILD) *.egg-info
 	$(BIN)/python setup.py sdist bdist_wheel
-	$(BIN)/twine upload $(DIST)/*
+	$(BIN)/twine upload --repository carto-auth $(DIST)/*
 
 publish-test-pypi:
 	rm -rf $(DIST) $(BUILD) *.egg-info
