@@ -29,6 +29,7 @@ class CartoPKCE:
     def __init__(
         self,
         open_browser=True,
+        org=None,
     ):
         """Creates PKCE Auth flow.
 
@@ -42,6 +43,7 @@ class CartoPKCE:
         self.open_browser = (
             False if (using_google_colab or using_databricks) else open_browser
         )
+        self.org = org
 
         self.redirect_uri = REDIRECT_URI if self.open_browser else REDIRECT_URI_CLI
 
@@ -86,6 +88,8 @@ class CartoPKCE:
         }
         if state is not None:
             payload["state"] = state
+        if self.org is not None:
+            payload["organization"] = self.org
         urlparams = urlencode(payload)
         return "%s?%s" % (OAUTH_AUTHORIZE_URL, urlparams)
 

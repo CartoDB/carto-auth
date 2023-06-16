@@ -17,8 +17,8 @@ def api_headers(access_token):
     }
 
 
-def get_oauth_token_info(open_browser=True):
-    carto_pkce = CartoPKCE(open_browser=open_browser)
+def get_oauth_token_info(open_browser=True, org=None):
+    carto_pkce = CartoPKCE(open_browser=open_browser, org=org)
     code = carto_pkce.get_auth_response()
     return carto_pkce.get_token_info(code)
 

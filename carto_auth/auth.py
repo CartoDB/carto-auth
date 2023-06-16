@@ -46,11 +46,13 @@ class CartoAuth:
         cache_filepath=None,
         use_cache=True,
         open_browser=True,
+        org=None,
     ):
         self._mode = mode
         self._api_base_url = api_base_url
         self._cache_filepath = cache_filepath
         self._use_cache = use_cache
+        self._org = org
 
         if mode == "oauth":
             self._access_token = access_token
@@ -68,7 +70,12 @@ class CartoAuth:
 
     @classmethod
     def from_oauth(
-        cls, cache_filepath=None, use_cache=True, open_browser=True, api_base_url=None
+        cls,
+        cache_filepath=None,
+        use_cache=True,
+        open_browser=True,
+        api_base_url=None,
+        org=None,
     ):
         """Create a CartoAuth object using OAuth with CARTO.
 
@@ -101,9 +108,10 @@ class CartoAuth:
                     cache_filepath=cache_filepath,
                     use_cache=use_cache,
                     open_browser=open_browser,
+                    org=org,
                 )
 
-        data = get_oauth_token_info(open_browser)
+        data = get_oauth_token_info(open_browser, org)
         return cls(
             mode=mode,
             api_base_url=api_base_url or get_api_base_url(data.get("access_token")),
@@ -112,6 +120,7 @@ class CartoAuth:
             cache_filepath=cache_filepath,
             use_cache=use_cache,
             open_browser=open_browser,
+            org=org,
         )
 
     @classmethod
@@ -187,7 +196,7 @@ class CartoAuth:
 
         # Token expired
         if self._mode == "oauth":
-            data = get_oauth_token_info(self._open_browser)
+            data = get_oauth_token_info(self._open_browser, self._org)
         elif self._mode == "m2m":
             data = get_m2m_token_info(self._client_id, self._client_secret)
 

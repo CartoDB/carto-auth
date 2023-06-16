@@ -32,6 +32,7 @@ def test_from_oauth__not_use_cache(mocker):
     assert carto_auth._access_token == "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpX"
     assert carto_auth._expiration == expiration
     assert carto_auth._open_browser is False
+    assert carto_auth._org is None
     load_mock.assert_not_called()
     save_mock.assert_not_called()
     get_oauth.assert_called_once()
@@ -60,6 +61,7 @@ def test_from_oauth__use_cache(mocker):
     assert carto_auth._access_token == "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpX"
     assert carto_auth._expiration == expiration
     assert carto_auth._open_browser is False
+    assert carto_auth._org is None
     load_mock.assert_called_once()
     save_mock.assert_called_once()
     get_oauth.assert_not_called()
@@ -98,10 +100,40 @@ def test_from_oauth__use_cache_expired(mocker):
     assert carto_auth._access_token == "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpX"
     assert carto_auth._expiration == expiration
     assert carto_auth._open_browser is False
+    assert carto_auth._org is None
     load_mock.assert_called_once()
     save_mock.assert_called_once()
     get_oauth.assert_called_once()
     get_api_base_url.assert_called_once()
+
+
+def test_from_oauth__org(mocker):
+    expiration = int((datetime.utcnow() + timedelta(seconds=10)).timestamp())
+    load_mock = mocker.patch(
+        "carto_auth.auth.load_cache_file",
+        return_value={
+            "api_base_url": "https://gcp-us-east1.api.carto.com",
+            "access_token": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpX",
+            "expiration": expiration,
+        },
+    )
+    save_mock = mocker.patch("carto_auth.auth.save_cache_file")
+    get_oauth = mocker.patch("carto_auth.auth.get_oauth_token_info")
+    get_api_base_url = mocker.patch("carto_auth.auth.get_api_base_url")
+
+    carto_auth = CartoAuth.from_oauth(open_browser=False, org="org_1234")
+    assert carto_auth._mode == "oauth"
+    assert carto_auth._api_base_url == "https://gcp-us-east1.api.carto.com"
+    assert str(carto_auth._cache_filepath).endswith(".carto-auth/token_oauth.json")
+    assert carto_auth._use_cache is True
+    assert carto_auth._access_token == "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpX"
+    assert carto_auth._expiration == expiration
+    assert carto_auth._open_browser is False
+    assert carto_auth._org == "org_1234"
+    load_mock.assert_called_once()
+    save_mock.assert_called_once()
+    get_oauth.assert_not_called()
+    get_api_base_url.assert_not_called()
 
 
 def test_from_m2m__not_use_cache(mocker):
